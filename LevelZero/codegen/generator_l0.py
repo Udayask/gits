@@ -93,6 +93,8 @@ Constant(name='ZES_VIRTUAL_FUNCTION_MANAGEMENT_EXP_NAME',value='"ZES_experimenta
 
 Constant(name='ZET_API_TRACING_EXP_NAME',value='"ZET_experimental_api_tracing"')
 
+Constant(name='ZET_CONCURRENT_METRIC_GROUPS_EXP_NAME',value='"ZET_experimental_concurrent_metric_groups"')
+
 Constant(name='ZET_EXPORT_METRICS_DATA_EXP_NAME',value='"ZET_experimental_metric_export_data"')
 
 Constant(name='ZET_GLOBAL_METRICS_TIMESTAMPS_EXP_NAME',value='"ZET_experimental_global_metric_timestamps"')
@@ -119,13 +121,15 @@ Constant(name='ZET_MAX_METRIC_PROGRAMMABLE_NAME_EXP',value='128')
 
 Constant(name='ZET_MAX_METRIC_PROGRAMMABLE_PARAMETER_NAME_EXP',value='128')
 
+Constant(name='ZET_MAX_METRIC_PROGRAMMABLE_VALUE_DESCRIPTION_EXP',value='128')
+
 Constant(name='ZET_MAX_METRIC_RESULT_UNITS',value='256')
 
 Constant(name='ZET_MAX_PROGRAMMABLE_METRICS_ELEMENT_DESCRIPTION_EXP',value='256')
 
 Constant(name='ZET_MAX_PROGRAMMABLE_METRICS_ELEMENT_NAME_EXP',value='256')
 
-Constant(name='ZET_MAX_VALUE_INFO_CSTRING_EXP',value='128')
+Constant(name='ZET_METRICS_TRACER_EXP_NAME',value='"ZET_experimental_metric_tracer"')
 
 Constant(name='ZET_MULTI_METRICS_EXP_NAME',value='"ZET_experimental_calculate_multiple_metrics"')
 
@@ -136,6 +140,8 @@ Constant(name='ZE_APICALL',value='__cdecl',condition='defined(_WIN32)')
 Constant(name='ZE_APIEXPORT',value='__declspec(dllexport)',condition='defined(_WIN32)')
 
 Constant(name='ZE_APIEXPORT',value='__attribute__ ((visibility ("default")))',condition='__GNUC__ >= 4')
+
+Constant(name='ZE_API_VERSION_CURRENT_M',value='ZE_MAKE_VERSION( 1, 11 )')
 
 Constant(name='ZE_BANDWIDTH_PROPERTIES_EXP_NAME',value='"ZE_experimental_bandwidth_properties"')
 
@@ -172,6 +178,8 @@ Constant(name='ZE_EVENT_QUERY_TIMESTAMPS_EXP_NAME',value='"ZE_experimental_event
 Constant(name='ZE_FABRIC_EXP_NAME',value='"ZE_experimental_fabric"')
 
 Constant(name='ZE_FLOAT_ATOMICS_EXT_NAME',value='"ZE_extension_float_atomics"')
+
+Constant(name='ZE_GET_KERNEL_BINARY_EXP_NAME',value='"ZE_extension_kernel_binary_exp"')
 
 Constant(name='ZE_GLOBAL_OFFSET_EXP_NAME',value='"ZE_experimental_global_offset"')
 
@@ -219,6 +227,8 @@ Constant(name='ZE_MAX_IPC_HANDLE_SIZE',value='64')
 
 Constant(name='ZE_MAX_KERNEL_UUID_SIZE',value='16')
 
+Constant(name='ZE_MAX_METRIC_GROUP_NAME_PREFIX',value='64')
+
 Constant(name='ZE_MAX_MODULE_UUID_SIZE',value='16')
 
 Constant(name='ZE_MAX_NATIVE_KERNEL_UUID_SIZE',value='16')
@@ -262,7 +272,9 @@ var7=VarDef(name='ZE_API_VERSION_1_6',value='ZE_MAKE_VERSION( 1, 6 )'),
 var8=VarDef(name='ZE_API_VERSION_1_7',value='ZE_MAKE_VERSION( 1, 7 )'),
 var9=VarDef(name='ZE_API_VERSION_1_8',value='ZE_MAKE_VERSION( 1, 8 )'),
 var10=VarDef(name='ZE_API_VERSION_1_9',value='ZE_MAKE_VERSION( 1, 9 )'),
-# var11=VarDef(name='ZE_API_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 9 )'),
+var11=VarDef(name='ZE_API_VERSION_1_10',value='ZE_MAKE_VERSION( 1, 10 )'),
+var12=VarDef(name='ZE_API_VERSION_1_11',value='ZE_MAKE_VERSION( 1, 11 )'),
+# var13=VarDef(name='ZE_API_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 11 )'),
 )
 
 Enum(name='ze_bandwidth_unit_t',
@@ -543,6 +555,7 @@ var4=VarDef(name='ZE_HOST_MEM_ALLOC_FLAG_BIAS_INITIAL_PLACEMENT',value='ZE_BIT(3
 
 Enum(name='ze_image_bindless_exp_flags_t',bitFields=True,
 var1=VarDef(name='ZE_IMAGE_BINDLESS_EXP_FLAG_BINDLESS',value='ZE_BIT(0)'),
+var2=VarDef(name='ZE_IMAGE_BINDLESS_EXP_FLAG_SAMPLED_IMAGE',value='ZE_BIT(1)'),
 )
 
 Enum(name='ze_image_copy_ext_version_t',
@@ -599,6 +612,9 @@ var40=VarDef(name='ZE_IMAGE_FORMAT_LAYOUT_422V',value='39'),
 var41=VarDef(name='ZE_IMAGE_FORMAT_LAYOUT_444P',value='40'),
 var42=VarDef(name='ZE_IMAGE_FORMAT_LAYOUT_RGBP',value='41'),
 var43=VarDef(name='ZE_IMAGE_FORMAT_LAYOUT_BRGP',value='42'),
+var44=VarDef(name='ZE_IMAGE_FORMAT_LAYOUT_8_8_8',value='43'),
+var45=VarDef(name='ZE_IMAGE_FORMAT_LAYOUT_16_16_16',value='44'),
+var46=VarDef(name='ZE_IMAGE_FORMAT_LAYOUT_32_32_32',value='45'),
 )
 
 Enum(name='ze_image_format_swizzle_t',
@@ -666,6 +682,11 @@ var1=VarDef(name='ZE_IMAGE_VIEW_PLANAR_EXT_VERSION_1_0',value='ZE_MAKE_VERSION( 
 Enum(name='ze_immediate_command_list_append_exp_version_t',
 var1=VarDef(name='ZE_IMMEDIATE_COMMAND_LIST_APPEND_EXP_VERSION_1_0',value='ZE_MAKE_VERSION( 1, 0 )'),
 # var2=VarDef(name='ZE_IMMEDIATE_COMMAND_LIST_APPEND_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 0 )'),
+)
+
+Enum(name='ze_init_driver_type_flags_t',bitFields=True,
+var1=VarDef(name='ZE_INIT_DRIVER_TYPE_FLAG_GPU',value='ZE_BIT(0)'),
+var2=VarDef(name='ZE_INIT_DRIVER_TYPE_FLAG_NPU',value='ZE_BIT(1)'),
 )
 
 Enum(name='ze_init_flags_t',bitFields=True,
@@ -806,6 +827,8 @@ var3=VarDef(name='ZE_MUTABLE_COMMAND_EXP_FLAG_GROUP_SIZE',value='ZE_BIT(2)'),
 var4=VarDef(name='ZE_MUTABLE_COMMAND_EXP_FLAG_GLOBAL_OFFSET',value='ZE_BIT(3)'),
 var5=VarDef(name='ZE_MUTABLE_COMMAND_EXP_FLAG_SIGNAL_EVENT',value='ZE_BIT(4)'),
 var6=VarDef(name='ZE_MUTABLE_COMMAND_EXP_FLAG_WAIT_EVENTS',value='ZE_BIT(5)'),
+var7=VarDef(name='ZE_MUTABLE_COMMAND_EXP_FLAG_KERNEL_INSTRUCTION',value='ZE_BIT(6)'),
+var8=VarDef(name='ZE_MUTABLE_COMMAND_EXP_FLAG_GRAPH_ARGUMENTS',value='ZE_BIT(7)'),
 )
 
 Enum(name='ze_mutable_command_list_exp_flags_t',bitFields=True,
@@ -814,7 +837,8 @@ var1=VarDef(name='ZE_MUTABLE_COMMAND_LIST_EXP_FLAG_RESERVED',value='ZE_BIT(0)'),
 
 Enum(name='ze_mutable_command_list_exp_version_t',
 var1=VarDef(name='ZE_MUTABLE_COMMAND_LIST_EXP_VERSION_1_0',value='ZE_MAKE_VERSION( 1, 0 )'),
-# var2=VarDef(name='ZE_MUTABLE_COMMAND_LIST_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 0 )'),
+var2=VarDef(name='ZE_MUTABLE_COMMAND_LIST_EXP_VERSION_1_1',value='ZE_MAKE_VERSION( 1, 1 )'),
+# var3=VarDef(name='ZE_MUTABLE_COMMAND_LIST_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 1 )'),
 )
 
 Enum(name='ze_pci_properties_ext_version_t',
@@ -823,7 +847,8 @@ var1=VarDef(name='ZE_PCI_PROPERTIES_EXT_VERSION_1_0',value='ZE_MAKE_VERSION( 1, 
 )
 
 Enum(name='ze_physical_mem_flags_t',bitFields=True,
-var1=VarDef(name='ZE_PHYSICAL_MEM_FLAG_TBD',value='ZE_BIT(0)'),
+var1=VarDef(name='ZE_PHYSICAL_MEM_FLAG_ALLOCATE_ON_DEVICE',value='ZE_BIT(0)'),
+var2=VarDef(name='ZE_PHYSICAL_MEM_FLAG_ALLOCATE_ON_HOST',value='ZE_BIT(1)'),
 )
 
 Enum(name='ze_power_saving_hint_exp_version_t',
@@ -901,7 +926,8 @@ var43=VarDef(name='ZE_RESULT_ERROR_INVALID_MODULE_UNLINKED',value='0x78000018'),
 var44=VarDef(name='ZE_RESULT_ERROR_INVALID_COMMAND_LIST_TYPE',value='0x78000019'),
 var45=VarDef(name='ZE_RESULT_ERROR_OVERLAPPING_REGIONS',value='0x7800001a'),
 var46=VarDef(name='ZE_RESULT_WARNING_ACTION_REQUIRED',value='0x7800001b'),
-var47=VarDef(name='ZE_RESULT_ERROR_UNKNOWN',value='0x7ffffffe'),
+var47=VarDef(name='ZE_RESULT_ERROR_INVALID_KERNEL_HANDLE',value='0x7800001c'),
+var48=VarDef(name='ZE_RESULT_ERROR_UNKNOWN',value='0x7ffffffe'),
 )
 
 Enum(name='ze_rtas_builder_build_op_exp_flags_t',bitFields=True,
@@ -1073,12 +1099,14 @@ var70=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_COMMAND_LIST_EXP_DESC',value='0x000
 var71=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_COMMAND_ID_EXP_DESC',value='0x00020017',struct='ze_mutable_command_id_exp_desc_t'),
 var72=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_COMMANDS_EXP_DESC',value='0x00020018',struct='ze_mutable_commands_exp_desc_t'),
 var73=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_KERNEL_ARGUMENT_EXP_DESC',value='0x00020019',struct='ze_mutable_kernel_argument_exp_desc_t'),
-# var74=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_GROUP_COUNT_EXP_DESC',value='0x0002001A',struct='ze_mutable_group_count_exp_desc_t'),
+# var80=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_GROUP_COUNT_EXP_DESC',value='0x0002001A',struct='ze_mutable_group_count_exp_desc_t'),
 var74=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_GROUP_SIZE_EXP_DESC',value='0x0002001B',struct='ze_mutable_group_size_exp_desc_t'),
 var75=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_GLOBAL_OFFSET_EXP_DESC',value='0x0002001C',struct='ze_mutable_global_offset_exp_desc_t'),
 var76=VarDef(name='ZE_STRUCTURE_TYPE_PITCHED_ALLOC_DEVICE_EXP_PROPERTIES',value='0x0002001D',struct='ze_device_pitched_alloc_exp_properties_t'),
 var77=VarDef(name='ZE_STRUCTURE_TYPE_BINDLESS_IMAGE_EXP_DESC',value='0x0002001E',struct='ze_image_bindless_exp_desc_t'),
 var78=VarDef(name='ZE_STRUCTURE_TYPE_PITCHED_IMAGE_EXP_DESC',value='0x0002001F',struct='ze_image_pitched_exp_desc_t'),
+# var79=VarDef(name='ZE_STRUCTURE_TYPE_MUTABLE_GRAPH_ARGUMENT_EXP_DESC',value='0x00020020',struct='ze_mutable_graph_argument_exp_desc_t'),
+var79=VarDef(name='ZE_STRUCTURE_TYPE_INIT_DRIVER_TYPE_DESC',value='0x00020021',struct='ze_init_driver_type_desc_t'),
 )
 
 Enum(name='zel_structure_type_t',
@@ -1521,10 +1549,13 @@ var45=VarDef(name='ZES_STRUCTURE_TYPE_DEVICE_UUID',value='0x2e',struct='zes_uuid
 var46=VarDef(name='ZES_STRUCTURE_TYPE_POWER_DOMAIN_EXP_PROPERTIES',value='0x00020001',struct='zes_power_domain_exp_properties_t'),
 var47=VarDef(name='ZES_STRUCTURE_TYPE_MEM_BANDWIDTH_COUNTER_BITS_EXP_PROPERTIES',value='0x00020002',struct='zes_mem_bandwidth_counter_bits_exp_properties_t'),
 var48=VarDef(name='ZES_STRUCTURE_TYPE_MEMORY_PAGE_OFFLINE_STATE_EXP',value='0x00020003',struct='zes_mem_page_offline_state_exp_t'),
-var49=VarDef(name='ZES_STRUCTURE_TYPE_SUB_DEVICE_EXP_PROPERTIES',value='0x00020004',struct='zes_subdevice_exp_properties_t'),
+var49=VarDef(name='ZES_STRUCTURE_TYPE_SUBDEVICE_EXP_PROPERTIES',value='0x00020004',struct='zes_subdevice_exp_properties_t'),
 var50=VarDef(name='ZES_STRUCTURE_TYPE_VF_EXP_PROPERTIES',value='0x00020005',struct='zes_vf_exp_properties_t'),
 var51=VarDef(name='ZES_STRUCTURE_TYPE_VF_UTIL_MEM_EXP',value='0x00020006',struct='zes_vf_util_mem_exp_t'),
 var52=VarDef(name='ZES_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP',value='0x00020007',struct='zes_vf_util_engine_exp_t'),
+var53=VarDef(name='ZES_STRUCTURE_TYPE_VF_EXP_CAPABILITIES',value='0x00020008',struct='zes_vf_exp_capabilities_t'),
+var54=VarDef(name='ZES_STRUCTURE_TYPE_VF_UTIL_MEM_EXP2',value='0x00020009',struct='zes_vf_util_mem_exp2_t'),
+var55=VarDef(name='ZES_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP2',value='0x00020010',struct='zes_vf_util_engine_exp2_t'),
 )
 
 Enum(name='zes_sysman_device_mapping_exp_version_t',
@@ -1541,6 +1572,7 @@ var5=VarDef(name='ZES_TEMP_SENSORS_GPU_MIN',value='4'),
 var6=VarDef(name='ZES_TEMP_SENSORS_MEMORY_MIN',value='5'),
 var7=VarDef(name='ZES_TEMP_SENSORS_GPU_BOARD',value='6'),
 var8=VarDef(name='ZES_TEMP_SENSORS_GPU_BOARD_MIN',value='7'),
+var9=VarDef(name='ZES_TEMP_SENSORS_VOLTAGE_REGULATOR',value='8'),
 )
 
 Enum(name='zes_vf_array_type_t',
@@ -1563,7 +1595,9 @@ var4=VarDef(name='ZES_VF_INFO_UTIL_EXP_FLAG_INFO_ENGINE',value='ZE_BIT(3)'),
 
 Enum(name='zes_vf_management_exp_version_t',
 var1=VarDef(name='ZES_VF_MANAGEMENT_EXP_VERSION_1_0',value='ZE_MAKE_VERSION( 1, 0 )'),
-# var2=VarDef(name='ZES_VF_MANAGEMENT_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 0 )'),
+var2=VarDef(name='ZES_VF_MANAGEMENT_EXP_VERSION_1_1',value='ZE_MAKE_VERSION( 1, 1 )'),
+var3=VarDef(name='ZES_VF_MANAGEMENT_EXP_VERSION_1_2',value='ZE_MAKE_VERSION( 1, 2 )'),
+# var4=VarDef(name='ZES_VF_MANAGEMENT_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 2 )'),
 )
 
 Enum(name='zes_vf_program_type_t',
@@ -1580,6 +1614,11 @@ var2=VarDef(name='ZES_VF_TYPE_FREQ',value='1'),
 Enum(name='zet_api_tracing_exp_version_t',
 var1=VarDef(name='ZET_API_TRACING_EXP_VERSION_1_0',value='ZE_MAKE_VERSION( 1, 0 )'),
 # var2=VarDef(name='ZET_API_TRACING_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 0 )'),
+)
+
+Enum(name='zet_concurrent_metric_groups_exp_version_t',
+var1=VarDef(name='ZET_CONCURRENT_METRIC_GROUPS_EXP_VERSION_1_0',value='ZE_MAKE_VERSION( 1, 0 )'),
+# var2=VarDef(name='ZET_CONCURRENT_METRIC_GROUPS_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 0 )'),
 )
 
 Enum(name='zet_debug_detach_reason_t',
@@ -1606,6 +1645,7 @@ var9=VarDef(name='ZET_DEBUG_EVENT_TYPE_PAGE_FAULT',value='8'),
 Enum(name='zet_debug_memory_space_type_t',
 var1=VarDef(name='ZET_DEBUG_MEMORY_SPACE_TYPE_DEFAULT',value='0'),
 var2=VarDef(name='ZET_DEBUG_MEMORY_SPACE_TYPE_SLM',value='1'),
+var3=VarDef(name='ZET_DEBUG_MEMORY_SPACE_TYPE_ELF',value='2'),
 )
 
 Enum(name='zet_debug_page_fault_reason_t',
@@ -1636,11 +1676,18 @@ var2=VarDef(name='ZET_METRIC_GROUP_CALCULATION_TYPE_MAX_METRIC_VALUES',value='1'
 Enum(name='zet_metric_group_sampling_type_flags_t',bitFields=True,
 var1=VarDef(name='ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_EVENT_BASED',value='ZE_BIT(0)'),
 var2=VarDef(name='ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED',value='ZE_BIT(1)'),
+var3=VarDef(name='ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_EXP_TRACER_BASED',value='ZE_BIT(2)'),
+)
+
+Enum(name='zet_metric_group_type_exp_flags_t',bitFields=True,
+var1=VarDef(name='ZET_METRIC_GROUP_TYPE_EXP_FLAG_EXPORT_DMA_BUF',value='ZE_BIT(0)'),
+var2=VarDef(name='ZET_METRIC_GROUP_TYPE_EXP_FLAG_USER_CREATED',value='ZE_BIT(1)'),
+var3=VarDef(name='ZET_METRIC_GROUP_TYPE_EXP_FLAG_OTHER',value='ZE_BIT(2)'),
 )
 
 Enum(name='zet_metric_programmable_exp_version_t',
-var1=VarDef(name='ZET_METRIC_PROGRAMMABLE_EXP_VERSION_1_0',value='ZE_MAKE_VERSION( 1, 0 )'),
-# var2=VarDef(name='ZET_METRIC_PROGRAMMABLE_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 0 )'),
+var1=VarDef(name='ZET_METRIC_PROGRAMMABLE_EXP_VERSION_1_1',value='ZE_MAKE_VERSION( 1, 1 )'),
+# var2=VarDef(name='ZET_METRIC_PROGRAMMABLE_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 1 )'),
 )
 
 Enum(name='zet_metric_programmable_param_type_exp_t',
@@ -1649,11 +1696,17 @@ var2=VarDef(name='ZET_METRIC_PROGRAMMABLE_PARAM_TYPE_EXP_LATENCY',value='1'),
 var3=VarDef(name='ZET_METRIC_PROGRAMMABLE_PARAM_TYPE_EXP_NORMALIZATION_UTILIZATION',value='2'),
 var4=VarDef(name='ZET_METRIC_PROGRAMMABLE_PARAM_TYPE_EXP_NORMALIZATION_AVERAGE',value='3'),
 var5=VarDef(name='ZET_METRIC_PROGRAMMABLE_PARAM_TYPE_EXP_NORMALIZATION_RATE',value='4'),
+var6=VarDef(name='ZET_METRIC_PROGRAMMABLE_PARAM_TYPE_EXP_NORMALIZATION_BYTES',value='5'),
 )
 
 Enum(name='zet_metric_query_pool_type_t',
 var1=VarDef(name='ZET_METRIC_QUERY_POOL_TYPE_PERFORMANCE',value='0'),
 var2=VarDef(name='ZET_METRIC_QUERY_POOL_TYPE_EXECUTION',value='1'),
+)
+
+Enum(name='zet_metric_tracer_exp_version_t',
+var1=VarDef(name='ZET_METRIC_TRACER_EXP_VERSION_1_0',value='ZE_MAKE_VERSION( 1, 0 )'),
+# var2=VarDef(name='ZET_METRIC_TRACER_EXP_VERSION_CURRENT',value='ZE_MAKE_VERSION( 1, 0 )'),
 )
 
 Enum(name='zet_metric_type_t',
@@ -1665,7 +1718,13 @@ var5=VarDef(name='ZET_METRIC_TYPE_TIMESTAMP',value='4'),
 var6=VarDef(name='ZET_METRIC_TYPE_FLAG',value='5'),
 var7=VarDef(name='ZET_METRIC_TYPE_RATIO',value='6'),
 var8=VarDef(name='ZET_METRIC_TYPE_RAW',value='7'),
-var10=VarDef(name='ZET_METRIC_TYPE_IP',value='0x7ffffffe'),
+var9=VarDef(name='ZET_METRIC_TYPE_IP_EXP',value='8'),
+var10=VarDef(name='ZET_METRIC_TYPE_IP',value='9'),
+var11=VarDef(name='ZET_METRIC_TYPE_EVENT_EXP_TIMESTAMP',value='10'),
+var12=VarDef(name='ZET_METRIC_TYPE_EVENT_EXP_START',value='11'),
+var13=VarDef(name='ZET_METRIC_TYPE_EVENT_EXP_END',value='12'),
+var14=VarDef(name='ZET_METRIC_TYPE_EXPORT_DMA_BUF',value='0x7ffffffd'),
+var15=VarDef(name='ZET_METRIC_TYPE_EVENT_EXP_MONOTONIC_WRAPS_VALUE',value='0x7ffffffe'),
 )
 
 Enum(name='zet_module_debug_info_format_t',
@@ -1696,6 +1755,9 @@ var11=VarDef(name='ZET_STRUCTURE_TYPE_METRIC_CALCULATE_EXP_DESC',value='0x000100
 var12=VarDef(name='ZET_STRUCTURE_TYPE_METRIC_PROGRAMMABLE_EXP_PROPERTIES',value='0x00010003',struct='zet_metric_programmable_exp_properties_t'),
 var13=VarDef(name='ZET_STRUCTURE_TYPE_METRIC_PROGRAMMABLE_PARAM_INFO_EXP',value='0x00010004',struct='zet_metric_programmable_param_info_exp_t'),
 var14=VarDef(name='ZET_STRUCTURE_TYPE_METRIC_PROGRAMMABLE_PARAM_VALUE_INFO_EXP',value='0x00010005',struct='zet_metric_programmable_param_value_info_exp_t'),
+var15=VarDef(name='ZET_STRUCTURE_TYPE_METRIC_GROUP_TYPE_EXP',value='0x00010006',struct='zet_metric_group_type_exp_t'),
+var16=VarDef(name='ZET_STRUCTURE_TYPE_EXPORT_DMA_EXP_PROPERTIES',value='0x00010007',struct='zet_export_dma_buf_exp_properties_t'),
+var17=VarDef(name='ZET_STRUCTURE_TYPE_METRIC_TRACER_EXP_DESC',value='0x00010008',struct='zet_metric_tracer_exp_desc_t'),
 )
 
 Enum(name='zet_value_info_type_exp_t',
@@ -1704,10 +1766,10 @@ var2=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_UINT64',value='1'),
 var3=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_FLOAT32',value='2'),
 var4=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_FLOAT64',value='3'),
 var5=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_BOOL8',value='4'),
-var6=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_CSTRING',value='5'),
-var7=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_UINT8',value='6'),
-var8=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_UINT16',value='7'),
-var9=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_UINT64_RANGE',value='8'),
+var6=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_UINT8',value='5'),
+var7=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_UINT16',value='6'),
+var8=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_UINT64_RANGE',value='7'),
+var9=VarDef(name='ZET_VALUE_INFO_TYPE_EXP_FLOAT64_RANGE',value='8'),
 )
 
 Enum(name='zet_value_type_t',
@@ -1791,6 +1853,12 @@ var2=VarDef(name='pNext',type='void*',tag='inout',wrapType='CExtensionStructCore
 Argument(name='ze_base_desc_t',
 var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
 var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+)
+
+Argument(name='ze_init_driver_type_desc_t',
+var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+var3=VarDef(name='flags',type='ze_init_driver_type_flags_t',tag='in'),
 )
 
 Argument(name='ze_driver_uuid_t',
@@ -2227,6 +2295,73 @@ var4=VarDef(name='fp32Flags',type='ze_device_fp_atomic_ext_flags_t',tag='out'),
 var5=VarDef(name='fp64Flags',type='ze_device_fp_atomic_ext_flags_t',tag='out'),
 )
 
+Argument(name='ze_mutable_command_id_exp_desc_t',
+var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+var3=VarDef(name='flags',type='ze_mutable_command_exp_flags_t',tag='in'),
+)
+
+Argument(name='ze_mutable_command_list_exp_properties_t',
+var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='void*',tag='inout',wrapType='CExtensionStructCore'),
+var3=VarDef(name='mutableCommandListFlags',type='ze_mutable_command_list_exp_flags_t',tag='out'),
+var4=VarDef(name='mutableCommandFlags',type='ze_mutable_command_exp_flags_t',tag='out'),
+)
+
+Argument(name='ze_mutable_command_list_exp_desc_t',
+var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+var3=VarDef(name='flags',type='ze_mutable_command_list_exp_flags_t',tag='in'),
+)
+
+Argument(name='ze_mutable_commands_exp_desc_t',
+var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+var3=VarDef(name='flags',type='uint32_t',tag='in'),
+)
+
+Argument(name='ze_mutable_kernel_argument_exp_desc_t',
+var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+var3=VarDef(name='commandId',type='uint64_t',tag='in'),
+var4=VarDef(name='argIndex',type='uint32_t',tag='in'),
+var5=VarDef(name='argSize',type='size_t',tag='in'),
+var6=VarDef(name='pArgValue',type='const void*',tag='in',wrapType='CKernelArgValue',wrapParams='argSize, {name}'),
+)
+
+# Argument(name='ze_mutable_group_count_exp_desc_t',
+# var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+# var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+# var3=VarDef(name='commandId',type='uint64_t',tag='in'),
+# var4=VarDef(name='pGroupCount',type='const ze_group_count_t*',tag='in'),
+# )
+
+Argument(name='ze_mutable_group_size_exp_desc_t',
+var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+var3=VarDef(name='commandId',type='uint64_t',tag='in'),
+var4=VarDef(name='groupSizeX',type='uint32_t',tag='in'),
+var5=VarDef(name='groupSizeY',type='uint32_t',tag='in'),
+var6=VarDef(name='groupSizeZ',type='uint32_t',tag='in'),
+)
+
+Argument(name='ze_mutable_global_offset_exp_desc_t',
+var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+var3=VarDef(name='commandId',type='uint64_t',tag='in'),
+var4=VarDef(name='offsetX',type='uint32_t',tag='in'),
+var5=VarDef(name='offsetY',type='uint32_t',tag='in'),
+var6=VarDef(name='offsetZ',type='uint32_t',tag='in'),
+)
+
+# Argument(name='ze_mutable_graph_argument_exp_desc_t',
+# var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
+# var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
+# var3=VarDef(name='commandId',type='uint64_t',tag='in'),
+# var4=VarDef(name='argIndex',type='uint32_t',tag='in'),
+# var5=VarDef(name='pArgValue',type='const void*',tag='in'),
+# )
+
 Argument(name='ze_relaxed_allocation_limits_exp_desc_t',
 var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
 var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
@@ -2660,65 +2795,6 @@ var3=VarDef(name='maxImageLinearWidth',type='size_t',tag='out'),
 var4=VarDef(name='maxImageLinearHeight',type='size_t',tag='out'),
 )
 
-Argument(name='ze_mutable_command_id_exp_desc_t',
-var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
-var3=VarDef(name='flags',type='ze_mutable_command_exp_flags_t',tag='in'),
-)
-
-Argument(name='ze_mutable_command_list_exp_properties_t',
-var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='void*',tag='inout',wrapType='CExtensionStructCore'),
-var3=VarDef(name='mutableCommandListFlags',type='ze_mutable_command_list_exp_flags_t',tag='out'),
-var4=VarDef(name='mutableCommandFlags',type='ze_mutable_command_exp_flags_t',tag='out'),
-)
-
-Argument(name='ze_mutable_command_list_exp_desc_t',
-var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
-var3=VarDef(name='flags',type='ze_mutable_command_list_exp_flags_t',tag='in'),
-)
-
-Argument(name='ze_mutable_commands_exp_desc_t',
-var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
-var3=VarDef(name='flags',type='uint32_t',tag='in'),
-)
-
-Argument(name='ze_mutable_kernel_argument_exp_desc_t',
-var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
-var3=VarDef(name='commandId',type='uint64_t',tag='in'),
-var4=VarDef(name='argIndex',type='uint32_t',tag='in'),
-var5=VarDef(name='argSize',type='size_t',tag='in'),
-var6=VarDef(name='pArgValue',type='const void*',tag='in',wrapType='CKernelArgValue',wrapParams='argSize, {name}'),
-)
-
-# Argument(name='ze_mutable_group_count_exp_desc_t',
-# var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
-# var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
-# var3=VarDef(name='commandId',type='uint64_t',tag='in'),
-# var4=VarDef(name='pGroupCount',type='const ze_group_count_t*',tag='in'),
-# )
-
-Argument(name='ze_mutable_group_size_exp_desc_t',
-var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
-var3=VarDef(name='commandId',type='uint64_t',tag='in'),
-var4=VarDef(name='groupSizeX',type='uint32_t',tag='in'),
-var5=VarDef(name='groupSizeY',type='uint32_t',tag='in'),
-var6=VarDef(name='groupSizeZ',type='uint32_t',tag='in'),
-)
-
-Argument(name='ze_mutable_global_offset_exp_desc_t',
-var1=VarDef(name='stype',type='ze_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructCore'),
-var3=VarDef(name='commandId',type='uint64_t',tag='in'),
-var4=VarDef(name='offsetX',type='uint32_t',tag='in'),
-var5=VarDef(name='offsetY',type='uint32_t',tag='in'),
-var6=VarDef(name='offsetZ',type='uint32_t',tag='in'),
-)
-
 Argument(name='zet_driver_handle_t',obj=True,alias='ze_driver_handle_t')
 
 Argument(name='zet_device_handle_t',obj=True,alias='ze_device_handle_t')
@@ -2891,6 +2967,37 @@ var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructT
 var3=VarDef(name='pUserData',type='void*',tag='in'),
 )
 
+Argument(name='zet_metric_tracer_exp_handle_t',obj=True)
+
+Argument(name='zet_metric_decoder_exp_handle_t',obj=True)
+
+Argument(name='zet_metric_tracer_exp_desc_t',
+var1=VarDef(name='stype',type='zet_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructTools'),
+var3=VarDef(name='notifyEveryNBytes',type='uint32_t',tag='inout'),
+)
+
+Argument(name='zet_metric_entry_exp_t',
+var1=VarDef(name='value',type='zet_value_t',tag='out'),
+var2=VarDef(name='timeStamp',type='uint64_t',tag='out'),
+var3=VarDef(name='metricIndex',type='uint32_t',tag='out'),
+var4=VarDef(name='onSubdevice',type='ze_bool_t',tag='out'),
+var5=VarDef(name='subdeviceId',type='uint32_t',tag='out'),
+)
+
+Argument(name='zet_metric_group_type_exp_t',
+var1=VarDef(name='stype',type='zet_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='void*',tag='inout',wrapType='CExtensionStructTools'),
+var3=VarDef(name='type',type='zet_metric_group_type_exp_flags_t',tag='out'),
+)
+
+Argument(name='zet_export_dma_buf_exp_properties_t',
+var1=VarDef(name='stype',type='zet_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='void*',tag='inout',wrapType='CExtensionStructTools'),
+var3=VarDef(name='fd',type='int',tag='out'),
+var4=VarDef(name='size',type='size_t',tag='out'),
+)
+
 Argument(name='zet_metric_global_timestamps_resolution_exp_t',
 var1=VarDef(name='stype',type='zet_structure_type_t',tag='in'),
 var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructTools'),
@@ -2924,6 +3031,11 @@ var1=VarDef(name='ui64Min',type='uint64_t',tag='out'),
 var2=VarDef(name='ui64Max',type='uint64_t',tag='out'),
 )
 
+Argument(name='zet_value_fp64_range_exp_t',
+var1=VarDef(name='fp64Min',type='double',tag='out'),
+var2=VarDef(name='fp64Max',type='double',tag='out'),
+)
+
 Argument(name='zet_value_info_exp_t',union=True,
 var1=VarDef(name='ui32',type='uint32_t',tag='out'),
 var2=VarDef(name='ui64',type='uint64_t',tag='out'),
@@ -2932,13 +3044,13 @@ var4=VarDef(name='fp64',type='double',tag='out'),
 var5=VarDef(name='b8',type='ze_bool_t',tag='out'),
 var6=VarDef(name='ui8',type='uint8_t',tag='out'),
 var7=VarDef(name='ui16',type='uint16_t',tag='out'),
-var8=VarDef(name='cString[ZET_MAX_VALUE_INFO_CSTRING_EXP]',type='char',tag='out'),
-var9=VarDef(name='ui64Range',type='zet_value_uint64_range_exp_t',tag='out'),
+var8=VarDef(name='ui64Range',type='zet_value_uint64_range_exp_t',tag='out'),
+var9=VarDef(name='fp64Range',type='zet_value_fp64_range_exp_t',tag='out'),
 )
 
 Argument(name='zet_metric_programmable_param_info_exp_t',
 var1=VarDef(name='stype',type='zet_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructTools'),
+var2=VarDef(name='pNext',type='void*',tag='inout',wrapType='CExtensionStructTools'),
 var3=VarDef(name='type',type='zet_metric_programmable_param_type_exp_t',tag='out'),
 var4=VarDef(name='name[ZET_MAX_METRIC_PROGRAMMABLE_PARAMETER_NAME_EXP]',type='char',tag='out'),
 var5=VarDef(name='valueInfoType',type='zet_value_info_type_exp_t',tag='out'),
@@ -2948,8 +3060,9 @@ var7=VarDef(name='valueInfoCount',type='uint32_t',tag='out'),
 
 Argument(name='zet_metric_programmable_param_value_info_exp_t',
 var1=VarDef(name='stype',type='zet_structure_type_t',tag='in'),
-var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructTools'),
+var2=VarDef(name='pNext',type='void*',tag='inout',wrapType='CExtensionStructTools'),
 var3=VarDef(name='valueInfo',type='zet_value_info_exp_t',tag='out'),
+var4=VarDef(name='description[ZET_MAX_METRIC_PROGRAMMABLE_VALUE_DESCRIPTION_EXP]',type='char',tag='out'),
 )
 
 Argument(name='zet_metric_programmable_param_value_exp_t',
@@ -3640,6 +3753,29 @@ var5=VarDef(name='samplingCounterValue',type='uint64_t',tag='out'),
 var6=VarDef(name='timestamp',type='uint64_t',tag='out'),
 )
 
+Argument(name='zes_vf_exp_capabilities_t',
+var1=VarDef(name='stype',type='zes_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='void*',tag='inout',wrapType='CExtensionStructSysman'),
+var3=VarDef(name='address',type='zes_pci_address_t',tag='out'),
+var4=VarDef(name='vfDeviceMemSize',type='uint32_t',tag='out'),
+var5=VarDef(name='vfID',type='uint32_t',tag='out'),
+)
+
+Argument(name='zes_vf_util_mem_exp2_t',
+var1=VarDef(name='stype',type='zes_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructSysman'),
+var3=VarDef(name='vfMemLocation',type='zes_mem_loc_t',tag='out'),
+var4=VarDef(name='vfMemUtilized',type='uint64_t',tag='out'),
+)
+
+Argument(name='zes_vf_util_engine_exp2_t',
+var1=VarDef(name='stype',type='zes_structure_type_t',tag='in'),
+var2=VarDef(name='pNext',type='const void*',tag='in',wrapType='CExtensionStructSysman'),
+var3=VarDef(name='vfEngineType',type='zes_engine_group_t',tag='out'),
+var4=VarDef(name='activeCounterValue',type='uint64_t',tag='out'),
+var5=VarDef(name='samplingCounterValue',type='uint64_t',tag='out'),
+)
+
 Function(name='zeCommandListAppendBarrier',component='ze_command_list',enabled=True,ddi_pos=6,stateTrack=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
@@ -3950,11 +4086,20 @@ arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
 arg2=ArgDef(name='phDevice',type='ze_device_handle_t*',tag='out',wrapType='COutArgument'),
 )
 
-Function(name='zeCommandListGetNextCommandIdExp',component='ze_command_list_exp',enabled=True,api_version='1.9',ddi_pos=2,
+Function(name='zeCommandListGetNextCommandIdExp',component='ze_command_list_exp',enabled=True,api_version='1.9',ddi_pos=1,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
 arg2=ArgDef(name='desc',type='const ze_mutable_command_id_exp_desc_t*',tag='in'),
 arg3=ArgDef(name='pCommandId',type='uint64_t*',tag='out',wrapType='Cuint64_t::CSArray'),
+)
+
+Function(name='zeCommandListGetNextCommandIdWithKernelsExp',component='ze_command_list_exp',enabled=True,api_version='1.10',ddi_pos=4,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
+arg2=ArgDef(name='desc',type='const ze_mutable_command_id_exp_desc_t*',tag='in'),
+arg3=ArgDef(name='numKernels',type='uint32_t',tag='in',optional=True),
+arg4=ArgDef(name='phKernels',type='ze_kernel_handle_t*',tag='in',range='0,numKernels',optional=True),
+arg5=ArgDef(name='pCommandId',type='uint64_t*',tag='out',wrapType='Cuint64_t::CSArray'),
 )
 
 Function(name='zeCommandListGetOrdinal',component='ze_command_list',enabled=True,api_version='1.9',ddi_pos=31,
@@ -3963,17 +4108,17 @@ arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
 arg2=ArgDef(name='pOrdinal',type='uint32_t*',tag='out',wrapType='Cuint32_t::CSArray'),
 )
 
-Function(name='zeCommandListHostSynchronize',component='ze_command_list',enabled=True,api_version='1.6',ddi_pos=28,
+Function(name='zeCommandListHostSynchronize',component='ze_command_list',enabled=True,api_version='1.6',ddi_pos=28,protectLogic=True,stateTrack=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
 arg2=ArgDef(name='timeout',type='uint64_t',tag='in'),
 )
 
-Function(name='zeCommandListImmediateAppendCommandListsExp',component='ze_command_list_exp',enabled=False,api_version='1.9',ddi_pos=1,recWrap=True,
+Function(name='zeCommandListImmediateAppendCommandListsExp',component='ze_command_list_exp',enabled=True,api_version='1.9',ddi_pos=3,stateTrack=True,recExecWrap=True,recWrap=True,runWrap=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandListImmediate',type='ze_command_list_handle_t',tag='in'),
 arg2=ArgDef(name='numCommandLists',type='uint32_t',tag='in'),
-arg3=ArgDef(name='phCommandLists',type='ze_command_list_handle_t*',tag='in'),
+arg3=ArgDef(name='phCommandLists',type='ze_command_list_handle_t*',tag='in',range='0,numCommandLists'),
 arg4=ArgDef(name='hSignalEvent',type='ze_event_handle_t',tag='in',optional=True),
 arg5=ArgDef(name='numWaitEvents',type='uint32_t',tag='in',optional=True),
 arg6=ArgDef(name='phWaitEvents',type='ze_event_handle_t*',tag='in',range='0,numWaitEvents',optional=True),
@@ -3996,14 +4141,22 @@ retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
 )
 
-Function(name='zeCommandListUpdateMutableCommandSignalEventExp',component='ze_command_list_exp',enabled=False,api_version='1.9',ddi_pos=4,
+Function(name='zeCommandListUpdateMutableCommandKernelsExp',component='ze_command_list_exp',enabled=False,api_version='1.10',ddi_pos=7,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
+arg2=ArgDef(name='numKernels',type='uint32_t',tag='in'),
+arg3=ArgDef(name='pCommandId',type='uint64_t*',tag='in',range='0,numKernels'),
+arg4=ArgDef(name='phKernels',type='ze_kernel_handle_t*',tag='in',range='0,numKernels'),
+)
+
+Function(name='zeCommandListUpdateMutableCommandSignalEventExp',component='ze_command_list_exp',enabled=False,api_version='1.10',ddi_pos=6,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
 arg2=ArgDef(name='commandId',type='uint64_t',tag='in'),
 arg3=ArgDef(name='hSignalEvent',type='ze_event_handle_t',tag='in',optional=True),
 )
 
-Function(name='zeCommandListUpdateMutableCommandWaitEventsExp',component='ze_command_list_exp',enabled=False,api_version='1.9',ddi_pos=5,
+Function(name='zeCommandListUpdateMutableCommandWaitEventsExp',component='ze_command_list_exp',enabled=False,api_version='1.9',ddi_pos=2,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
 arg2=ArgDef(name='commandId',type='uint64_t',tag='in'),
@@ -4011,8 +4164,7 @@ arg3=ArgDef(name='numWaitEvents',type='uint32_t',tag='in',optional=True),
 arg4=ArgDef(name='phWaitEvents',type='ze_event_handle_t*',tag='in',range='0,numWaitEvents',optional=True),
 )
 
-
-Function(name='zeCommandListUpdateMutableCommandsExp',component='ze_command_list_exp',enabled=False,api_version='1.9',ddi_pos=3,
+Function(name='zeCommandListUpdateMutableCommandsExp',component='ze_command_list_exp',enabled=False,api_version='1.10',ddi_pos=5,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandList',type='ze_command_list_handle_t',tag='in'),
 arg2=ArgDef(name='desc',type='const ze_mutable_commands_exp_desc_t*',tag='in'),
@@ -4051,7 +4203,7 @@ arg1=ArgDef(name='hCommandQueue',type='ze_command_queue_handle_t',tag='in'),
 arg2=ArgDef(name='pOrdinal',type='uint32_t*',tag='out',wrapType='Cuint32_t::CSArray'),
 )
 
-Function(name='zeCommandQueueSynchronize',component='ze_command_queue',enabled=True,ddi_pos=3,stateTrack=True,
+Function(name='zeCommandQueueSynchronize',component='ze_command_queue',enabled=True,ddi_pos=3,stateTrack=True,protectLogic=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hCommandQueue',type='ze_command_queue_handle_t',tag='in'),
 arg2=ArgDef(name='timeout',type='uint64_t',tag='in'),
@@ -4363,7 +4515,7 @@ arg1=ArgDef(name='hEvent',type='ze_event_handle_t',tag='in'),
 arg2=ArgDef(name='pWaitScope',type='ze_event_scope_flags_t*',tag='out',wrapType='COutArgument'),
 )
 
-Function(name='zeEventHostReset',component='ze_event',enabled=True,ddi_pos=5,
+Function(name='zeEventHostReset',component='ze_event',enabled=True,ddi_pos=5,stateTrack=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hEvent',type='ze_event_handle_t',tag='in'),
 )
@@ -4373,7 +4525,7 @@ retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hEvent',type='ze_event_handle_t',tag='in'),
 )
 
-Function(name='zeEventHostSynchronize',component='ze_event',enabled=True,ddi_pos=3,
+Function(name='zeEventHostSynchronize',component='ze_event',enabled=True,ddi_pos=3,protectLogic=True,stateTrack=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hEvent',type='ze_event_handle_t',tag='in'),
 arg2=ArgDef(name='timeout',type='uint64_t',tag='in'),
@@ -4443,7 +4595,7 @@ arg3=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
 arg4=ArgDef(name='pResults',type='ze_event_query_kernel_timestamps_results_ext_properties_t*',tag='inout',range='0,*pCount',optional=True),
 )
 
-Function(name='zeEventQueryStatus',component='ze_event',enabled=True,ddi_pos=4,
+Function(name='zeEventQueryStatus',component='ze_event',enabled=True,ddi_pos=4,unprotectLogic=True,stateTrack=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hEvent',type='ze_event_handle_t',tag='in'),
 )
@@ -4515,13 +4667,13 @@ retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hFence',type='ze_fence_handle_t',tag='in',release=True),
 )
 
-Function(name='zeFenceHostSynchronize',component='ze_fence',enabled=True,ddi_pos=2,stateTrack=True,
+Function(name='zeFenceHostSynchronize',component='ze_fence',enabled=True,ddi_pos=2,stateTrack=True,protectLogic=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hFence',type='ze_fence_handle_t',tag='in'),
 arg2=ArgDef(name='timeout',type='uint64_t',tag='in'),
 )
 
-Function(name='zeFenceQueryStatus',component='ze_fence',enabled=True,runWrap=True,ddi_pos=3,stateTrack=True,
+Function(name='zeFenceQueryStatus',component='ze_fence',enabled=True,runWrap=True,ddi_pos=3,stateTrack=True,unprotectLogic=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hFence',type='ze_fence_handle_t',tag='in'),
 )
@@ -4592,6 +4744,13 @@ arg5=ArgDef(name='phImageView',type='ze_image_handle_t*',tag='out'),
 Function(name='zeInit',component='ze_global',enabled=True,recWrap=True,ddi_pos=0,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='flags',type='ze_init_flags_t',tag='in'),
+)
+
+Function(name='zeInitDrivers',component='ze_global',enabled=True,api_version='1.10',ddi_pos=1,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
+arg2=ArgDef(name='phDrivers',type='ze_driver_handle_t*',tag='inout',range='0,*pCount',optional=True),
+arg3=ArgDef(name='desc',type='ze_init_driver_type_desc_t*',tag='in'),
 )
 
 Function(name='zeKernelCreate',component='ze_kernel',enabled=True,stateTrack=True,ddi_pos=0,
@@ -4827,12 +4986,12 @@ arg4=ArgDef(name='size',type='size_t',tag='in'),
 arg5=ArgDef(name='attr',type='ze_memory_atomic_attr_exp_flags_t',tag='in'),
 )
 
-Function(name='zeModuleBuildLogDestroy',component='ze_module_build_log',enabled=True,ddi_pos=0,
+Function(name='zeModuleBuildLogDestroy',component='ze_module_build_log',enabled=True,ddi_pos=0,skipRun=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hModuleBuildLog',type='ze_module_build_log_handle_t',tag='in',release=True),
 )
 
-Function(name='zeModuleBuildLogGetString',component='ze_module_build_log',enabled=True,ddi_pos=1,
+Function(name='zeModuleBuildLogGetString',component='ze_module_build_log',enabled=True,ddi_pos=1,skipRun=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hModuleBuildLog',type='ze_module_build_log_handle_t',tag='in'),
 arg2=ArgDef(name='pSize',type='size_t*',tag='inout'),
@@ -5122,6 +5281,13 @@ retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hDevice',type='zes_device_handle_t',tag='in'),
 arg2=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
 arg3=ArgDef(name='phDiagnostics',type='zes_diag_handle_t*',tag='inout',range='0,*pCount',optional=True),
+)
+
+Function(name='zesDeviceEnumEnabledVFExp',component='zes_device_exp',enabled=False,api_version='1.10',ddi_pos=2,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hDevice',type='zes_device_handle_t',tag='in'),
+arg2=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
+arg3=ArgDef(name='phVFhandle',type='zes_vf_handle_t*',tag='inout',range='0,*pCount',optional=True),
 )
 
 Function(name='zesDeviceEnumEngineGroups',component='zes_device',enabled=True,ddi_pos=9,recWrap=True,
@@ -5562,7 +5728,7 @@ arg2=ArgDef(name='pProperties',type='zes_firmware_properties_t*',tag='inout'),
 Function(name='zesFirmwareGetSecurityVersionExp',component='zes_firmware_exp',enabled=False,api_version='1.9',ddi_pos=0,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hFirmware',type='zes_firmware_handle_t',tag='in'),
-arg2=ArgDef(name='version[ZES_STRING_PROPERTY_SIZE]',type='char',tag='out'),
+arg2=ArgDef(name='pVersion',type='char*',tag='inout'),
 )
 
 Function(name='zesFirmwareSetSecurityVersionExp',component='zes_firmware_exp',enabled=False,api_version='1.9',ddi_pos=1,
@@ -6004,6 +6170,12 @@ arg1=ArgDef(name='hTemperature',type='zes_temp_handle_t',tag='in'),
 arg2=ArgDef(name='pConfig',type='const zes_temp_config_t*',tag='in'),
 )
 
+Function(name='zesVFManagementGetVFCapabilitiesExp',component='zes_vf_management_exp',enabled=False,api_version='1.10',ddi_pos=5,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hVFhandle',type='zes_vf_handle_t',tag='in'),
+arg2=ArgDef(name='pCapability',type='zes_vf_exp_capabilities_t*',tag='inout'),
+)
+
 Function(name='zesVFManagementGetVFEngineUtilizationExp',component='zes_vf_management_exp',enabled=False,api_version='1.9',ddi_pos=2,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hVFhandle',type='zes_vf_handle_t',tag='in'),
@@ -6011,11 +6183,25 @@ arg2=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
 arg3=ArgDef(name='pEngineUtil',type='zes_vf_util_engine_exp_t*',tag='inout',range='0,*pCount',optional=True),
 )
 
+Function(name='zesVFManagementGetVFEngineUtilizationExp2',component='zes_vf_management_exp',enabled=False,api_version='1.10',ddi_pos=7,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hVFhandle',type='zes_vf_handle_t',tag='in'),
+arg2=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
+arg3=ArgDef(name='pEngineUtil',type='zes_vf_util_engine_exp2_t*',tag='inout',range='0,*pCount',optional=True),
+)
+
 Function(name='zesVFManagementGetVFMemoryUtilizationExp',component='zes_vf_management_exp',enabled=False,api_version='1.9',ddi_pos=1,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hVFhandle',type='zes_vf_handle_t',tag='in'),
 arg2=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
 arg3=ArgDef(name='pMemUtil',type='zes_vf_util_mem_exp_t*',tag='inout',range='0,*pCount',optional=True),
+)
+
+Function(name='zesVFManagementGetVFMemoryUtilizationExp2',component='zes_vf_management_exp',enabled=False,api_version='1.10',ddi_pos=6,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hVFhandle',type='zes_vf_handle_t',tag='in'),
+arg2=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
+arg3=ArgDef(name='pMemUtil',type='zes_vf_util_mem_exp2_t*',tag='inout',range='0,*pCount',optional=True),
 )
 
 Function(name='zesVFManagementGetVFPropertiesExp',component='zes_vf_management_exp',enabled=False,api_version='1.9',ddi_pos=0,
@@ -6163,6 +6349,26 @@ arg5=ArgDef(name='count',type='uint32_t',tag='in'),
 arg6=ArgDef(name='pRegisterValues',type='void*',tag='inout',wrapType='COutArgument',optional=True),
 )
 
+Function(name='zetDeviceCreateMetricGroupsFromMetricsExp',component='zet_device_exp',enabled=False,api_version='1.10',ddi_pos=1,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hDevice',type='zet_device_handle_t',tag='in'),
+arg2=ArgDef(name='metricCount',type='uint32_t',tag='in'),
+arg3=ArgDef(name='phMetrics',type='zet_metric_handle_t *',tag='in'),
+arg4=ArgDef(name='pMetricGroupNamePrefix',type='const char *',tag='in'),
+arg5=ArgDef(name='pDescription',type='const char *',tag='in'),
+arg6=ArgDef(name='pMetricGroupCount',type='uint32_t *',tag='inout'),
+arg7=ArgDef(name='phMetricGroup',type='zet_metric_group_handle_t*',tag='inout',range='0,*pMetricGroupCount',optional=True),
+)
+
+Function(name='zetDeviceGetConcurrentMetricGroupsExp',component='zet_device_exp',enabled=False,api_version='1.10',ddi_pos=0,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hDevice',type='zet_device_handle_t',tag='in'),
+arg2=ArgDef(name='metricGroupCount',type='uint32_t',tag='in'),
+arg3=ArgDef(name='phMetricGroups',type='zet_metric_group_handle_t *',tag='inout'),
+arg4=ArgDef(name='pMetricGroupsCountPerConcurrentGroup',type='uint32_t *',tag='inout',optional=True),
+arg5=ArgDef(name='pConcurrentGroupCount',type='uint32_t *',tag='out'),
+)
+
 Function(name='zetDeviceGetDebugProperties',component='zet_device',enabled=True,ddi_pos=0,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hDevice',type='zet_device_handle_t',tag='in'),
@@ -6175,18 +6381,47 @@ arg1=ArgDef(name='hKernel',type='zet_kernel_handle_t',tag='in'),
 arg2=ArgDef(name='pProfileProperties',type='zet_profile_properties_t*',tag='out'),
 )
 
-Function(name='zetMetricCreateFromProgrammableExp',component='zet_metric_exp',enabled=False,api_version='1.9',ddi_pos=0,
+Function(name='zetMetricCreateFromProgrammableExp',component='zet_metric_exp',enabled=False,api_version='1.11',ddi_pos=2,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hMetricProgrammable',type='zet_metric_programmable_exp_handle_t',tag='in'),
 arg2=ArgDef(name='pParameterValues',type='zet_metric_programmable_param_value_exp_t*',tag='in'),
 arg3=ArgDef(name='parameterCount',type='uint32_t',tag='in'),
-arg4=ArgDef(name='name[ZET_MAX_METRIC_NAME]',type='const char',tag='in'),
-arg5=ArgDef(name='description[ZET_MAX_METRIC_DESCRIPTION]',type='const char',tag='in'),
+arg4=ArgDef(name='pName',type='const char*',tag='in'),
+arg5=ArgDef(name='pDescription',type='const char*',tag='in'),
 arg6=ArgDef(name='pMetricHandleCount',type='uint32_t*',tag='inout'),
 arg7=ArgDef(name='phMetricHandles',type='zet_metric_handle_t*',tag='inout',range='0,*pMetricHandleCount',optional=True),
 )
 
-Function(name='zetMetricDestroyExp',component='zet_metric_exp',enabled=True,api_version='1.9',ddi_pos=1,
+Function(name='zetMetricCreateFromProgrammableExp2',component='zet_metric_exp',enabled=False,api_version='1.11',ddi_pos=1,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hMetricProgrammable',type='zet_metric_programmable_exp_handle_t',tag='in'),
+arg2=ArgDef(name='parameterCount',type='uint32_t',tag='in'),
+arg3=ArgDef(name='pParameterValues',type='zet_metric_programmable_param_value_exp_t*',tag='in'),
+arg4=ArgDef(name='pName',type='const char*',tag='in'),
+arg5=ArgDef(name='pDescription',type='const char*',tag='in'),
+arg6=ArgDef(name='pMetricHandleCount',type='uint32_t*',tag='inout'),
+arg7=ArgDef(name='phMetricHandles',type='zet_metric_handle_t*',tag='inout',range='0,*pMetricHandleCount',optional=True),
+)
+
+Function(name='zetMetricDecoderCreateExp',component='zet_metric_decoder_exp',enabled=False,api_version='1.10',ddi_pos=0,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hMetricTracer',type='zet_metric_tracer_exp_handle_t',tag='in'),
+arg2=ArgDef(name='phMetricDecoder',type='zet_metric_decoder_exp_handle_t*',tag='out'),
+)
+
+Function(name='zetMetricDecoderDestroyExp',component='zet_metric_decoder_exp',enabled=False,api_version='1.10',ddi_pos=1,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='phMetricDecoder',type='zet_metric_decoder_exp_handle_t',tag='in'),
+)
+
+Function(name='zetMetricDecoderGetDecodableMetricsExp',component='zet_metric_decoder_exp',enabled=False,api_version='1.10',ddi_pos=2,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hMetricDecoder',type='zet_metric_decoder_exp_handle_t',tag='in'),
+arg2=ArgDef(name='pCount',type='uint32_t*',tag='inout'),
+arg3=ArgDef(name='phMetrics',type='zet_metric_handle_t*',tag='inout',range='0,*pCount'),
+)
+
+Function(name='zetMetricDestroyExp',component='zet_metric_exp',enabled=False,api_version='1.9',ddi_pos=0,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hMetric',type='zet_metric_handle_t',tag='in'),
 )
@@ -6204,7 +6439,7 @@ arg1=ArgDef(name='hMetric',type='zet_metric_handle_t',tag='in'),
 arg2=ArgDef(name='pProperties',type='zet_metric_properties_t*',tag='inout'),
 )
 
-Function(name='zetMetricGroupAddMetricExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=5,
+Function(name='zetMetricGroupAddMetricExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=4,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hMetricGroup',type='zet_metric_group_handle_t',tag='in'),
 arg2=ArgDef(name='hMetric',type='zet_metric_handle_t',tag='in'),
@@ -6247,21 +6482,21 @@ arg7=ArgDef(name='pMetricCounts',type='uint32_t*',tag='inout',range='0,*pSetCoun
 arg8=ArgDef(name='pMetricValues',type='zet_typed_value_t*',tag='inout',range='0,*pTotalMetricValueCount',optional=True),
 )
 
-Function(name='zetMetricGroupCloseExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=7,
+Function(name='zetMetricGroupCloseExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=6,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hMetricGroup',type='zet_metric_group_handle_t',tag='in'),
 )
 
-Function(name='zetMetricGroupCreateExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=4,
+Function(name='zetMetricGroupCreateExp',component='zet_metric_group_exp',enabled=False,api_version='1.11',ddi_pos=8,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hDevice',type='zet_device_handle_t',tag='in'),
-arg2=ArgDef(name='name[ZET_MAX_METRIC_GROUP_NAME]',type='const char',tag='in'),
-arg3=ArgDef(name='description[ZET_MAX_METRIC_GROUP_DESCRIPTION]',type='const char',tag='in'),
+arg2=ArgDef(name='pName',type='const char*',tag='in'),
+arg3=ArgDef(name='pDescription',type='const char*',tag='in'),
 arg4=ArgDef(name='samplingType',type='zet_metric_group_sampling_type_flags_t',tag='in'),
 arg5=ArgDef(name='phMetricGroup',type='zet_metric_group_handle_t*',tag='inout'),
 )
 
-Function(name='zetMetricGroupDestroyExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=8,
+Function(name='zetMetricGroupDestroyExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=7,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hMetricGroup',type='zet_metric_group_handle_t',tag='in'),
 )
@@ -6296,7 +6531,7 @@ arg1=ArgDef(name='hMetricGroup',type='zet_metric_group_handle_t',tag='in'),
 arg2=ArgDef(name='pProperties',type='zet_metric_group_properties_t*',tag='inout'),
 )
 
-Function(name='zetMetricGroupRemoveMetricExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=6,
+Function(name='zetMetricGroupRemoveMetricExp',component='zet_metric_group_exp',enabled=False,api_version='1.9',ddi_pos=5,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hMetricGroup',type='zet_metric_group_handle_t',tag='in'),
 arg2=ArgDef(name='hMetric',type='zet_metric_handle_t',tag='in'),
@@ -6391,7 +6626,55 @@ arg3=ArgDef(name='pRawDataSize',type='size_t*',tag='inout'),
 arg4=ArgDef(name='pRawData',type='uint8_t*',tag='inout',range='0,*pRawDataSize',optional=True),
 )
 
-Function(name='zetModuleGetDebugInfo',component='zet_module',enabled=True,ddi_pos=0,
+Function(name='zetMetricTracerCreateExp',component='zet_metric_tracer_exp',enabled=False,api_version='1.10',ddi_pos=0,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hContext',type='zet_context_handle_t',tag='in'),
+arg2=ArgDef(name='hDevice',type='zet_device_handle_t',tag='in'),
+arg3=ArgDef(name='metricGroupCount',type='uint32_t',tag='in'),
+arg4=ArgDef(name='phMetricGroups',type='zet_metric_group_handle_t*',tag='in',range='0,metricGroupCount '),
+arg5=ArgDef(name='desc',type='zet_metric_tracer_exp_desc_t*',tag='inout'),
+arg6=ArgDef(name='hNotificationEvent',type='ze_event_handle_t',tag='in',optional=True),
+arg7=ArgDef(name='phMetricTracer',type='zet_metric_tracer_exp_handle_t*',tag='out'),
+)
+
+Function(name='zetMetricTracerDecodeExp',component='zet_metric_tracer_exp',enabled=False,api_version='1.10',ddi_pos=5,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='phMetricDecoder',type='zet_metric_decoder_exp_handle_t',tag='in'),
+arg2=ArgDef(name='pRawDataSize',type='size_t*',tag='inout'),
+arg3=ArgDef(name='pRawData',type='uint8_t*',tag='inout',range='0,*pRawDataSize',optional=True),
+arg4=ArgDef(name='metricsCount',type='uint32_t',tag='in'),
+arg5=ArgDef(name='phMetrics',type='zet_metric_handle_t*',tag='in',range='0,metricsCount'),
+arg6=ArgDef(name='pSetCount',type='uint32_t*',tag='inout'),
+arg7=ArgDef(name='pMetricEntriesCountPerSet',type='uint32_t*',tag='inout',range='0,*pSetCount',optional=True),
+arg8=ArgDef(name='pMetricEntriesCount',type='uint32_t*',tag='inout'),
+arg9=ArgDef(name='pMetricEntries',type='zet_metric_entry_exp_t*',tag='inout',range='0,*pMetricEntriesCount',optional=True),
+)
+
+Function(name='zetMetricTracerDestroyExp',component='zet_metric_tracer_exp',enabled=False,api_version='1.10',ddi_pos=1,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hMetricTracer',type='zet_metric_tracer_exp_handle_t',tag='in'),
+)
+
+Function(name='zetMetricTracerDisableExp',component='zet_metric_tracer_exp',enabled=False,api_version='1.10',ddi_pos=3,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hMetricTracer',type='zet_metric_tracer_exp_handle_t',tag='in'),
+arg2=ArgDef(name='synchronous',type='ze_bool_t',tag='in'),
+)
+
+Function(name='zetMetricTracerEnableExp',component='zet_metric_tracer_exp',enabled=False,api_version='1.10',ddi_pos=2,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hMetricTracer',type='zet_metric_tracer_exp_handle_t',tag='in'),
+arg2=ArgDef(name='synchronous',type='ze_bool_t',tag='in'),
+)
+
+Function(name='zetMetricTracerReadDataExp',component='zet_metric_tracer_exp',enabled=False,api_version='1.10',ddi_pos=4,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hMetricTracer',type='zet_metric_tracer_exp_handle_t',tag='in'),
+arg2=ArgDef(name='pRawDataSize',type='size_t*',tag='inout'),
+arg3=ArgDef(name='pRawData',type='uint8_t*',tag='inout',range='0,*pRawDataSize',optional=True),
+)
+
+Function(name='zetModuleGetDebugInfo',component='zet_module',enabled=False,ddi_pos=0,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hModule',type='zet_module_handle_t',tag='in'),
 arg2=ArgDef(name='format',type='zet_module_debug_info_format_t',tag='in'),
@@ -6399,19 +6682,19 @@ arg3=ArgDef(name='pSize',type='size_t*',tag='inout'),
 arg4=ArgDef(name='pDebugInfo',type='uint8_t*',tag='inout',optional=True),
 )
 
-Function(name='zetTracerExpCreate',component='zet_tracer_exp',enabled=True,ddi_pos=0,
+Function(name='zetTracerExpCreate',component='zet_tracer_exp',enabled=False,ddi_pos=0,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hContext',type='zet_context_handle_t',tag='in'),
 arg2=ArgDef(name='desc',type='const zet_tracer_exp_desc_t*',tag='in'),
 arg3=ArgDef(name='phTracer',type='zet_tracer_exp_handle_t*',tag='out'),
 )
 
-Function(name='zetTracerExpDestroy',component='zet_tracer_exp',enabled=True,ddi_pos=1,
+Function(name='zetTracerExpDestroy',component='zet_tracer_exp',enabled=False,ddi_pos=1,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hTracer',type='zet_tracer_exp_handle_t',tag='in',release=True),
 )
 
-Function(name='zetTracerExpSetEnabled',component='zet_tracer_exp',enabled=True,ddi_pos=4,
+Function(name='zetTracerExpSetEnabled',component='zet_tracer_exp',enabled=False,ddi_pos=4,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hTracer',type='zet_tracer_exp_handle_t',tag='in'),
 arg2=ArgDef(name='enable',type='ze_bool_t',tag='in'),
@@ -6456,6 +6739,31 @@ Function(name='zelTracerSetPrologues',component='zel_tracer',enabled=False,ddi_p
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
 arg2=ArgDef(name='pCoreCbs',type='zel_core_callbacks_t*',tag='in'),
+)
+
+Function(name='zelLoaderGetVersions',component='zel',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='num_elems',type='size_t*',tag='in'),
+arg2=ArgDef(name='versions',type='zel_component_version_t *',tag='inout',wrapType='COutArgument'),
+)
+
+Function(name='zelSetDriverTeardown',component='zel',enabled=False,recExecWrap=True,
+retV=RetDef(type='ze_result_t'),
+)
+
+Function(name='zelEnableTracingLayer',component='zel',enabled=False,
+retV=RetDef(type='ze_result_t'),
+)
+
+Function(name='zelDisableTracingLayer',component='zel',enabled=False,
+retV=RetDef(type='ze_result_t'),
+)
+
+Function(name='zelLoaderTranslateHandle',component='zel',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='handleType',type='zel_handle_type_t',tag='in'),
+arg2=ArgDef(name='handleIn',type='void *',tag='in',wrapType='COutArgument'),
+arg3=ArgDef(name='handleOut',type='void **',tag='inout',wrapType='COutArgument'),
 )
 
 Function(name='zeGetCommandListProcAddrTable',component='ze_dditable',enabled=True,skipRun=True,
@@ -6794,6 +7102,12 @@ arg1=ArgDef(name='version',type='ze_api_version_t',tag='in'),
 arg2=ArgDef(name='pDdiTable',type='zet_device_dditable_t*',tag='inout',wrapType='COutArgument'),
 )
 
+Function(name='zetGetDeviceExpProcAddrTable',component='ze_dditable',enabled=True,skipRun=True,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='version',type='ze_api_version_t',tag='in'),
+arg2=ArgDef(name='pDdiTable',type='zet_device_exp_dditable_t*',tag='inout',wrapType='COutArgument'),
+)
+
 Function(name='zetGetKernelProcAddrTable',component='ze_dditable',enabled=True,skipRun=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='version',type='ze_api_version_t',tag='in'),
@@ -6804,6 +7118,12 @@ Function(name='zetGetMetricProcAddrTable',component='ze_dditable',enabled=True,s
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='version',type='ze_api_version_t',tag='in'),
 arg2=ArgDef(name='pDdiTable',type='zet_metric_dditable_t*',tag='inout',wrapType='COutArgument'),
+)
+
+Function(name='zetGetMetricDecoderExpProcAddrTable',component='ze_dditable',enabled=True,skipRun=True,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='version',type='ze_api_version_t',tag='in'),
+arg2=ArgDef(name='pDdiTable',type='zet_metric_decoder_exp_dditable_t*',tag='inout',wrapType='COutArgument'),
 )
 
 Function(name='zetGetMetricExpProcAddrTable',component='ze_dditable',enabled=True,skipRun=True,
@@ -6848,6 +7168,12 @@ arg1=ArgDef(name='version',type='ze_api_version_t',tag='in'),
 arg2=ArgDef(name='pDdiTable',type='zet_metric_streamer_dditable_t*',tag='inout',wrapType='COutArgument'),
 )
 
+Function(name='zetGetMetricTracerExpProcAddrTable',component='ze_dditable',enabled=True,skipRun=True,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='version',type='ze_api_version_t',tag='in'),
+arg2=ArgDef(name='pDdiTable',type='zet_metric_tracer_exp_dditable_t*',tag='inout',wrapType='COutArgument'),
+)
+
 Function(name='zetGetModuleProcAddrTable',component='ze_dditable',enabled=True,skipRun=True,
 retV=RetDef(type='ze_result_t'),
 arg1=ArgDef(name='version',type='ze_api_version_t',tag='in'),
@@ -6889,3 +7215,1318 @@ arg1=ArgDef(name='hDevice',type='ze_device_handle_t',tag='in'),
 arg2=ArgDef(name='count',type='uint32_t',tag='in'),
 arg3=ArgDef(name='cqGroupProperties',type='const ze_command_queue_group_properties_t*',tag='in',wrapParams='count, {name}')
 )
+
+Function(name='zelTracerInitRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnInitCb',type='ze_pfnInitCb_t',tag='in'),
+)
+
+Function(name='zelTracerDriverGetRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetCb',type='ze_pfnDriverGetCb_t',tag='in'),
+)
+
+Function(name='zelTracerInitDriversRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnInitDriversCb',type='ze_pfnInitDriversCb_t',tag='in'),
+)
+
+Function(name='zelTracerDriverGetApiVersionRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetApiVersionCb',type='ze_pfnDriverGetApiVersionCb_t',tag='in'),
+)
+
+Function(name='zelTracerDriverGetPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPropertiesCb',type='ze_pfnDriverGetPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDriverGetIpcPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetIpcPropertiesCb',type='ze_pfnDriverGetIpcPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDriverGetExtensionPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetExtensionPropertiesCb',type='ze_pfnDriverGetExtensionPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDriverGetExtensionFunctionAddressRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetExtensionFunctionAddressCb',type='ze_pfnDriverGetExtensionFunctionAddressCb_t',tag='in'),
+)
+
+Function(name='zelTracerDriverGetLastErrorDescriptionRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetLastErrorDescriptionCb',type='ze_pfnDriverGetLastErrorDescriptionCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetCb',type='ze_pfnDeviceGetCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetRootDeviceRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetRootDeviceCb',type='ze_pfnDeviceGetRootDeviceCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetSubDevicesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetSubDevicesCb',type='ze_pfnDeviceGetSubDevicesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPropertiesCb',type='ze_pfnDeviceGetPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetComputePropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetComputePropertiesCb',type='ze_pfnDeviceGetComputePropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetModulePropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetModulePropertiesCb',type='ze_pfnDeviceGetModulePropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetCommandQueueGroupPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetCommandQueueGroupPropertiesCb',type='ze_pfnDeviceGetCommandQueueGroupPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetMemoryPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetMemoryPropertiesCb',type='ze_pfnDeviceGetMemoryPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetMemoryAccessPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetMemoryAccessPropertiesCb',type='ze_pfnDeviceGetMemoryAccessPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetCachePropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetCachePropertiesCb',type='ze_pfnDeviceGetCachePropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetImagePropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetImagePropertiesCb',type='ze_pfnDeviceGetImagePropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetExternalMemoryPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetExternalMemoryPropertiesCb',type='ze_pfnDeviceGetExternalMemoryPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetP2PPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetP2PPropertiesCb',type='ze_pfnDeviceGetP2PPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceCanAccessPeerRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCanAccessPeerCb',type='ze_pfnDeviceCanAccessPeerCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetStatusRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetStatusCb',type='ze_pfnDeviceGetStatusCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetGlobalTimestampsRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetGlobalTimestampsCb',type='ze_pfnDeviceGetGlobalTimestampsCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnContextCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextCreateExRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateExCb',type='ze_pfnContextCreateExCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnContextDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextGetStatusRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetStatusCb',type='ze_pfnContextGetStatusCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandQueueCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnCommandQueueCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandQueueDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnCommandQueueDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandQueueExecuteCommandListsRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnExecuteCommandListsCb',type='ze_pfnCommandQueueExecuteCommandListsCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandQueueSynchronizeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSynchronizeCb',type='ze_pfnCommandQueueSynchronizeCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandQueueGetOrdinalRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetOrdinalCb',type='ze_pfnCommandQueueGetOrdinalCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandQueueGetIndexRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetIndexCb',type='ze_pfnCommandQueueGetIndexCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnCommandListCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListCreateImmediateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateImmediateCb',type='ze_pfnCommandListCreateImmediateCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnCommandListDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListCloseRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCloseCb',type='ze_pfnCommandListCloseCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListResetRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnResetCb',type='ze_pfnCommandListResetCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendWriteGlobalTimestampRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendWriteGlobalTimestampCb',type='ze_pfnCommandListAppendWriteGlobalTimestampCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListHostSynchronizeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnHostSynchronizeCb',type='ze_pfnCommandListHostSynchronizeCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListGetDeviceHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetDeviceHandleCb',type='ze_pfnCommandListGetDeviceHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListGetContextHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetContextHandleCb',type='ze_pfnCommandListGetContextHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListGetOrdinalRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetOrdinalCb',type='ze_pfnCommandListGetOrdinalCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListImmediateGetIndexRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnImmediateGetIndexCb',type='ze_pfnCommandListImmediateGetIndexCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListIsImmediateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnIsImmediateCb',type='ze_pfnCommandListIsImmediateCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendBarrierRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendBarrierCb',type='ze_pfnCommandListAppendBarrierCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendMemoryRangesBarrierRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendMemoryRangesBarrierCb',type='ze_pfnCommandListAppendMemoryRangesBarrierCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextSystemBarrierRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSystemBarrierCb',type='ze_pfnContextSystemBarrierCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendMemoryCopyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendMemoryCopyCb',type='ze_pfnCommandListAppendMemoryCopyCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendMemoryFillRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendMemoryFillCb',type='ze_pfnCommandListAppendMemoryFillCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendMemoryCopyRegionRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendMemoryCopyRegionCb',type='ze_pfnCommandListAppendMemoryCopyRegionCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendMemoryCopyFromContextRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendMemoryCopyFromContextCb',type='ze_pfnCommandListAppendMemoryCopyFromContextCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendImageCopyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendImageCopyCb',type='ze_pfnCommandListAppendImageCopyCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendImageCopyRegionRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendImageCopyRegionCb',type='ze_pfnCommandListAppendImageCopyRegionCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendImageCopyToMemoryRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendImageCopyToMemoryCb',type='ze_pfnCommandListAppendImageCopyToMemoryCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendImageCopyFromMemoryRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendImageCopyFromMemoryCb',type='ze_pfnCommandListAppendImageCopyFromMemoryCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendMemoryPrefetchRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendMemoryPrefetchCb',type='ze_pfnCommandListAppendMemoryPrefetchCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendMemAdviseRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendMemAdviseCb',type='ze_pfnCommandListAppendMemAdviseCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventPoolCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnEventPoolCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventPoolDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnEventPoolDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnEventCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnEventDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventPoolGetIpcHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetIpcHandleCb',type='ze_pfnEventPoolGetIpcHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventPoolPutIpcHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnPutIpcHandleCb',type='ze_pfnEventPoolPutIpcHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventPoolOpenIpcHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnOpenIpcHandleCb',type='ze_pfnEventPoolOpenIpcHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventPoolCloseIpcHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCloseIpcHandleCb',type='ze_pfnEventPoolCloseIpcHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendSignalEventRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendSignalEventCb',type='ze_pfnCommandListAppendSignalEventCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendWaitOnEventsRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendWaitOnEventsCb',type='ze_pfnCommandListAppendWaitOnEventsCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventHostSignalRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnHostSignalCb',type='ze_pfnEventHostSignalCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventHostSynchronizeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnHostSynchronizeCb',type='ze_pfnEventHostSynchronizeCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventQueryStatusRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnQueryStatusCb',type='ze_pfnEventQueryStatusCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendEventResetRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendEventResetCb',type='ze_pfnCommandListAppendEventResetCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventHostResetRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnHostResetCb',type='ze_pfnEventHostResetCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventQueryKernelTimestampRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnQueryKernelTimestampCb',type='ze_pfnEventQueryKernelTimestampCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendQueryKernelTimestampsRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendQueryKernelTimestampsCb',type='ze_pfnCommandListAppendQueryKernelTimestampsCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventGetEventPoolRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetEventPoolCb',type='ze_pfnEventGetEventPoolCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventGetSignalScopeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetSignalScopeCb',type='ze_pfnEventGetSignalScopeCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventGetWaitScopeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetWaitScopeCb',type='ze_pfnEventGetWaitScopeCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventPoolGetContextHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetContextHandleCb',type='ze_pfnEventPoolGetContextHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventPoolGetFlagsRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetFlagsCb',type='ze_pfnEventPoolGetFlagsCb_t',tag='in'),
+)
+
+Function(name='zelTracerFenceCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnFenceCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerFenceDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnFenceDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerFenceHostSynchronizeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnHostSynchronizeCb',type='ze_pfnFenceHostSynchronizeCb_t',tag='in'),
+)
+
+Function(name='zelTracerFenceQueryStatusRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnQueryStatusCb',type='ze_pfnFenceQueryStatusCb_t',tag='in'),
+)
+
+Function(name='zelTracerFenceResetRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnResetCb',type='ze_pfnFenceResetCb_t',tag='in'),
+)
+
+Function(name='zelTracerImageGetPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPropertiesCb',type='ze_pfnImageGetPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerImageCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnImageCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerImageDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnImageDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemAllocSharedRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAllocSharedCb',type='ze_pfnMemAllocSharedCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemAllocDeviceRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAllocDeviceCb',type='ze_pfnMemAllocDeviceCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemAllocHostRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAllocHostCb',type='ze_pfnMemAllocHostCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemFreeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnFreeCb',type='ze_pfnMemFreeCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemGetAllocPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetAllocPropertiesCb',type='ze_pfnMemGetAllocPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemGetAddressRangeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetAddressRangeCb',type='ze_pfnMemGetAddressRangeCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemGetIpcHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetIpcHandleCb',type='ze_pfnMemGetIpcHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemGetIpcHandleFromFileDescriptorExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetIpcHandleFromFileDescriptorExpCb',type='ze_pfnMemGetIpcHandleFromFileDescriptorExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemGetFileDescriptorFromIpcHandleExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetFileDescriptorFromIpcHandleExpCb',type='ze_pfnMemGetFileDescriptorFromIpcHandleExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemPutIpcHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnPutIpcHandleCb',type='ze_pfnMemPutIpcHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemOpenIpcHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnOpenIpcHandleCb',type='ze_pfnMemOpenIpcHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemCloseIpcHandleRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCloseIpcHandleCb',type='ze_pfnMemCloseIpcHandleCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemSetAtomicAccessAttributeExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSetAtomicAccessAttributeExpCb',type='ze_pfnMemSetAtomicAccessAttributeExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemGetAtomicAccessAttributeExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetAtomicAccessAttributeExpCb',type='ze_pfnMemGetAtomicAccessAttributeExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnModuleCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnModuleDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleDynamicLinkRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDynamicLinkCb',type='ze_pfnModuleDynamicLinkCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleBuildLogDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnModuleBuildLogDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleBuildLogGetStringRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetStringCb',type='ze_pfnModuleBuildLogGetStringCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleGetNativeBinaryRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetNativeBinaryCb',type='ze_pfnModuleGetNativeBinaryCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleGetGlobalPointerRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetGlobalPointerCb',type='ze_pfnModuleGetGlobalPointerCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleGetKernelNamesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetKernelNamesCb',type='ze_pfnModuleGetKernelNamesCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleGetPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPropertiesCb',type='ze_pfnModuleGetPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnKernelCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnKernelDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleGetFunctionPointerRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetFunctionPointerCb',type='ze_pfnModuleGetFunctionPointerCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelSetGroupSizeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSetGroupSizeCb',type='ze_pfnKernelSetGroupSizeCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelSuggestGroupSizeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSuggestGroupSizeCb',type='ze_pfnKernelSuggestGroupSizeCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelSuggestMaxCooperativeGroupCountRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSuggestMaxCooperativeGroupCountCb',type='ze_pfnKernelSuggestMaxCooperativeGroupCountCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelSetArgumentValueRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSetArgumentValueCb',type='ze_pfnKernelSetArgumentValueCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelSetIndirectAccessRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSetIndirectAccessCb',type='ze_pfnKernelSetIndirectAccessCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelGetIndirectAccessRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetIndirectAccessCb',type='ze_pfnKernelGetIndirectAccessCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelGetSourceAttributesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetSourceAttributesCb',type='ze_pfnKernelGetSourceAttributesCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelSetCacheConfigRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSetCacheConfigCb',type='ze_pfnKernelSetCacheConfigCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelGetPropertiesRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPropertiesCb',type='ze_pfnKernelGetPropertiesCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelGetNameRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetNameCb',type='ze_pfnKernelGetNameCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendLaunchKernelRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendLaunchKernelCb',type='ze_pfnCommandListAppendLaunchKernelCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendLaunchCooperativeKernelRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendLaunchCooperativeKernelCb',type='ze_pfnCommandListAppendLaunchCooperativeKernelCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendLaunchKernelIndirectRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendLaunchKernelIndirectCb',type='ze_pfnCommandListAppendLaunchKernelIndirectCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendLaunchMultipleKernelsIndirectRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendLaunchMultipleKernelsIndirectCb',type='ze_pfnCommandListAppendLaunchMultipleKernelsIndirectCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextMakeMemoryResidentRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnMakeMemoryResidentCb',type='ze_pfnContextMakeMemoryResidentCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextEvictMemoryRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnEvictMemoryCb',type='ze_pfnContextEvictMemoryCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextMakeImageResidentRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnMakeImageResidentCb',type='ze_pfnContextMakeImageResidentCb_t',tag='in'),
+)
+
+Function(name='zelTracerContextEvictImageRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnEvictImageCb',type='ze_pfnContextEvictImageCb_t',tag='in'),
+)
+
+Function(name='zelTracerSamplerCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnSamplerCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerSamplerDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnSamplerDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerVirtualMemReserveRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnReserveCb',type='ze_pfnVirtualMemReserveCb_t',tag='in'),
+)
+
+Function(name='zelTracerVirtualMemFreeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnFreeCb',type='ze_pfnVirtualMemFreeCb_t',tag='in'),
+)
+
+Function(name='zelTracerVirtualMemQueryPageSizeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnQueryPageSizeCb',type='ze_pfnVirtualMemQueryPageSizeCb_t',tag='in'),
+)
+
+Function(name='zelTracerPhysicalMemCreateRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCb',type='ze_pfnPhysicalMemCreateCb_t',tag='in'),
+)
+
+Function(name='zelTracerPhysicalMemDestroyRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyCb',type='ze_pfnPhysicalMemDestroyCb_t',tag='in'),
+)
+
+Function(name='zelTracerVirtualMemMapRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnMapCb',type='ze_pfnVirtualMemMapCb_t',tag='in'),
+)
+
+Function(name='zelTracerVirtualMemUnmapRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnUnmapCb',type='ze_pfnVirtualMemUnmapCb_t',tag='in'),
+)
+
+Function(name='zelTracerVirtualMemSetAccessAttributeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSetAccessAttributeCb',type='ze_pfnVirtualMemSetAccessAttributeCb_t',tag='in'),
+)
+
+Function(name='zelTracerVirtualMemGetAccessAttributeRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetAccessAttributeCb',type='ze_pfnVirtualMemGetAccessAttributeCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelSetGlobalOffsetExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSetGlobalOffsetExpCb',type='ze_pfnKernelSetGlobalOffsetExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListGetNextCommandIdExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetNextCommandIdExpCb',type='ze_pfnCommandListGetNextCommandIdExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListGetNextCommandIdWithKernelsExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetNextCommandIdWithKernelsExpCb',type='ze_pfnCommandListGetNextCommandIdWithKernelsExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListUpdateMutableCommandsExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnUpdateMutableCommandsExpCb',type='ze_pfnCommandListUpdateMutableCommandsExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListUpdateMutableCommandSignalEventExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnUpdateMutableCommandSignalEventExpCb',type='ze_pfnCommandListUpdateMutableCommandSignalEventExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListUpdateMutableCommandWaitEventsExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnUpdateMutableCommandWaitEventsExpCb',type='ze_pfnCommandListUpdateMutableCommandWaitEventsExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListUpdateMutableCommandKernelsExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnUpdateMutableCommandKernelsExpCb',type='ze_pfnCommandListUpdateMutableCommandKernelsExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceReserveCacheExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnReserveCacheExtCb',type='ze_pfnDeviceReserveCacheExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceSetCacheAdviceExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSetCacheAdviceExtCb',type='ze_pfnDeviceSetCacheAdviceExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventQueryTimestampsExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnQueryTimestampsExpCb',type='ze_pfnEventQueryTimestampsExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerImageGetMemoryPropertiesExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetMemoryPropertiesExpCb',type='ze_pfnImageGetMemoryPropertiesExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerImageViewCreateExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnViewCreateExtCb',type='ze_pfnImageViewCreateExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerImageViewCreateExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnViewCreateExpCb',type='ze_pfnImageViewCreateExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerKernelSchedulingHintExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnSchedulingHintExpCb',type='ze_pfnKernelSchedulingHintExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerDevicePciGetPropertiesExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnPciGetPropertiesExtCb',type='ze_pfnDevicePciGetPropertiesExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendImageCopyToMemoryExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendImageCopyToMemoryExtCb',type='ze_pfnCommandListAppendImageCopyToMemoryExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListAppendImageCopyFromMemoryExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnAppendImageCopyFromMemoryExtCb',type='ze_pfnCommandListAppendImageCopyFromMemoryExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerImageGetAllocPropertiesExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetAllocPropertiesExtCb',type='ze_pfnImageGetAllocPropertiesExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerModuleInspectLinkageExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnInspectLinkageExtCb',type='ze_pfnModuleInspectLinkageExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemFreeExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnFreeExtCb',type='ze_pfnMemFreeExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerFabricVertexGetExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetExpCb',type='ze_pfnFabricVertexGetExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerFabricVertexGetSubVerticesExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetSubVerticesExpCb',type='ze_pfnFabricVertexGetSubVerticesExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerFabricVertexGetPropertiesExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPropertiesExpCb',type='ze_pfnFabricVertexGetPropertiesExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerFabricVertexGetDeviceExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetDeviceExpCb',type='ze_pfnFabricVertexGetDeviceExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerDeviceGetFabricVertexExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetFabricVertexExpCb',type='ze_pfnDeviceGetFabricVertexExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerFabricEdgeGetExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetExpCb',type='ze_pfnFabricEdgeGetExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerFabricEdgeGetVerticesExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetVerticesExpCb',type='ze_pfnFabricEdgeGetVerticesExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerFabricEdgeGetPropertiesExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPropertiesExpCb',type='ze_pfnFabricEdgeGetPropertiesExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerEventQueryKernelTimestampsExtRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnQueryKernelTimestampsExtCb',type='ze_pfnEventQueryKernelTimestampsExtCb_t',tag='in'),
+)
+
+Function(name='zelTracerRTASBuilderCreateExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateExpCb',type='ze_pfnRTASBuilderCreateExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerRTASBuilderGetBuildPropertiesExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetBuildPropertiesExpCb',type='ze_pfnRTASBuilderGetBuildPropertiesExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerDriverRTASFormatCompatibilityCheckExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnRTASFormatCompatibilityCheckExpCb',type='ze_pfnDriverRTASFormatCompatibilityCheckExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerRTASBuilderBuildExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnBuildExpCb',type='ze_pfnRTASBuilderBuildExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerRTASBuilderDestroyExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyExpCb',type='ze_pfnRTASBuilderDestroyExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerRTASParallelOperationCreateExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateExpCb',type='ze_pfnRTASParallelOperationCreateExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerRTASParallelOperationGetPropertiesExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPropertiesExpCb',type='ze_pfnRTASParallelOperationGetPropertiesExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerRTASParallelOperationJoinExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnJoinExpCb',type='ze_pfnRTASParallelOperationJoinExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerRTASParallelOperationDestroyExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnDestroyExpCb',type='ze_pfnRTASParallelOperationDestroyExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerMemGetPitchFor2dImageRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetPitchFor2dImageCb',type='ze_pfnMemGetPitchFor2dImageCb_t',tag='in'),
+)
+
+Function(name='zelTracerImageGetDeviceOffsetExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnGetDeviceOffsetExpCb',type='ze_pfnImageGetDeviceOffsetExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListCreateCloneExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnCreateCloneExpCb',type='ze_pfnCommandListCreateCloneExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerCommandListImmediateAppendCommandListsExpRegisterCallback',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+arg2=ArgDef(name='callback_type',type='zel_tracer_reg_t',tag='in'),
+arg3=ArgDef(name='pfnImmediateAppendCommandListsExpCb',type='ze_pfnCommandListImmediateAppendCommandListsExpCb_t',tag='in'),
+)
+
+Function(name='zelTracerResetAllCallbacks',component='zel_tracer_register_cb',enabled=False,
+retV=RetDef(type='ze_result_t'),
+arg1=ArgDef(name='hTracer',type='zel_tracer_handle_t',tag='in'),
+)
+

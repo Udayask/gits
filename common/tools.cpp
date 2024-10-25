@@ -300,7 +300,8 @@ void SaveJsonFile(const nlohmann::ordered_json& json, const std::filesystem::pat
 #endif
 
 void CheckMinimumAvailableDiskSize() {
-  auto path = Config::Get().common.recorder.dumpPath;
+  auto config = Config::Get();
+  auto& path = config.common.recorder.dumpPath;
   auto diskSpaceInfo = std::filesystem::space(path);
   uintmax_t minDiskSize = 104857600;
   if (diskSpaceInfo.available <= minDiskSize) {
@@ -514,7 +515,7 @@ gits::ShadowBuffer::~ShadowBuffer() {
   }
 }
 
-void gits::ShadowBuffer::Init(bool pagealigned, size_t size, void* orig) {
+void gits::ShadowBuffer::Init(bool pagealigned, size_t size, void* orig, bool isWriteWatch) {
   if (Initialized()) {
     return;
   }
@@ -523,7 +524,12 @@ void gits::ShadowBuffer::Init(bool pagealigned, size_t size, void* orig) {
   void* shadow;
   if (_pagealigned) {
 #ifdef GITS_PLATFORM_WINDOWS
-    shadow = VirtualAlloc(NULL, _size, MEM_COMMIT, PAGE_READWRITE);
+    if (isWriteWatch) {
+      shadow =
+          VirtualAlloc(nullptr, _size, MEM_COMMIT | MEM_RESERVE | MEM_WRITE_WATCH, PAGE_READWRITE);
+    } else {
+      shadow = VirtualAlloc(nullptr, _size, MEM_COMMIT, PAGE_READWRITE);
+    }
 #else
     shadow = mmap(nullptr, _size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
 #endif
@@ -728,6 +734,10 @@ uint64_t gits::LZ4StreamCompressor::Decompress(const std::vector<char>& compress
   return returnValue;
 }
 
+uint64_t gits::LZ4StreamCompressor::MaxCompressedSize(const uint64_t dataSize) {
+  return static_cast<uint64_t>(LZ4_compressBound(static_cast<int>(dataSize)));
+}
+
 gits::ZSTDStreamCompressor::ZSTDStreamCompressor() {
   ZSTDContext = ZSTD_createCCtx();
 }
@@ -766,6 +776,10 @@ uint64_t gits::ZSTDStreamCompressor::Decompress(const std::vector<char>& compres
     throw EOperationFailed(EXCEPTION_MESSAGE);
   }
   return returnedUncompressedSize;
+}
+
+uint64_t gits::ZSTDStreamCompressor::MaxCompressedSize(const uint64_t dataSize) {
+  return static_cast<uint64_t>(ZSTD_compressBound(dataSize));
 }
 
 #if defined(GITS_PLATFORM_WINDOWS)

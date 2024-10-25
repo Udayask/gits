@@ -26,6 +26,7 @@ namespace gits {
     template<typename T> void lua_push_extension_struct([[maybe_unused]] lua_State * L,[[maybe_unused]] const void* pNext) {
       throw ENotImplemented(EXCEPTION_MESSAGE);
     }
+    template<> inline zel_handle_type_t lua_to_ext(lua_State* L, int pos) { return static_cast<zel_handle_type_t>(lua_tointeger(L, pos)); }
 %for name, enum in enums.items():
     template<> inline ${enum.get('name')} lua_to_ext(lua_State* L, int pos) { return static_cast<${enum.get('name')}>(lua_tointeger(L, pos)); }
     template<> inline ${enum.get('name')}* lua_to_ext(lua_State* L, int pos) { return static_cast<${enum.get('name')}*>(lua_touserdata(L, pos)); }
@@ -37,7 +38,7 @@ namespace gits {
   %endif
 %endfor
 %for name, arg in arguments.items():
-  %if not is_latest_version(arguments, arg):
+  %if not is_latest_version(arguments, arg) or not arg.get('enabled', True):
 <% continue %>
   %endif
   %if 'vars' in arg:
@@ -86,7 +87,11 @@ namespace gits {
       %if '[' in var['name']:
         std::memcpy(&val.${get_name(var['name'])}[0], (${var['type']}*)lua_to_ext<void*>(L, -1), ${get_array_size(var['name'])});
       %else:
+        %if var['name'] == 'pNext':
+        val.${var['name']} = lua_to_extension_struct<${get_namespace(arg.get('name'))}_structure_type_t>(L, -1);
+        %else:
         val.${var['name']} = lua_to_ext<${var['type']}>(L, -1);
+        %endif
       %endif
         lua_pop(L, 1);
     %endfor
@@ -107,7 +112,11 @@ namespace gits {
       %if '[' in var['name']:
         std::memcpy(&val->${get_name(var['name'])}[0], (${var['type']}*)lua_to_ext<void*>(L, -1), ${get_array_size(var['name'])});
       %else:
+        %if var['name'] == 'pNext':
+        val->${var['name']} = lua_to_extension_struct<${get_namespace(arg.get('name'))}_structure_type_t>(L, -1);
+        %else:
         val->${var['name']} = lua_to_ext<${var['type']}>(L, -1);
+        %endif
       %endif
         lua_pop(L, 1);
     %endfor

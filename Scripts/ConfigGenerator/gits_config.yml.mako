@@ -151,13 +151,7 @@ Common:
     LogLoadedTokens: false
     EscalatePriority: false
     SwapAfterPrepare: false
-    LoadResourcesImmediately: false
     StopAfterFrames: '-'
-    TokenLoadLimit: 4294967295
-    UseZoneAllocator: false
-    PrecacheResources: false
-    SyncWithRecorder: false
-    KeepApis: 'all'
     NullRun: false
     WaitForEnter: false
     CleanResourcesOnExit: false
@@ -267,10 +261,8 @@ OpenGL:
     TraceGitsInternal: false
     LinkGetProgBinary: false
     LinkUseProgBinary: false
-    ForcePortableWglDepthBits: 0
     AffectedViewport: []
     TraceGLBufferHashes: '-'
-    ShowOriginalPixelFormat: false
     ForceNoMSAA: false
     DestroyContextsOnExit: false
 %if platform != "win32":
@@ -313,23 +305,18 @@ Vulkan:
     DumpScreenshots: '-'
     DumpSubmits: '-'
     TraceVKStructs: true
-%if platform == "win32":
-    UseExternalMemoryExtension: false
-%endif
     MemorySegmentSize: 512
 %if platform == "win32":
-    ShadowMemory: true
-    MemoryAccessDetection: true
+    MemoryTrackingMode: 'External' # External / ShadowMemory / WriteWatch / FullMemoryDump
     MemoryUpdateState: 'OnlyUsed'
 %elif platform in ["lnx_32", "lnx_64", "lnx_arm"]:
-    ShadowMemory: false
-    MemoryAccessDetection: false
+    MemoryTrackingMode: 'FullMemoryDump' # ShadowMemory / FullMemoryDump
     MemoryUpdateState: 'AllMapped'
 %endif
     ForceUniversalRecording: false
     DelayFenceChecksCount: 0
     ShortenFenceWaitTime: 0
-    AddImageUsageFlags: 0x0
+    AddImageUsageFlags: 0x2  # VK_IMAGE_USAGE_TRANSFER_DST_BIT
     AddBufferUsageFlags: 0x1
     ScheduleCommandBuffersBeforeQueueSubmitWA: false
     MinimalStateRestore: true
@@ -348,7 +335,7 @@ Vulkan:
     MemoryRestoration: 'HostVisible'  # None / HostVisible
     RestoreMultisampleImagesWA: false
     MaxArraySizeForCCode: 400
-    UseCaptureReplayFeaturesForBuffersAndAccelerationStructures: false
+    UseCaptureReplayFeaturesForBuffersAndAccelerationStructures: true
     UseCaptureReplayFeaturesForRayTracingPipelines: true
 %if platform == "win32":
     UsePresentSrcLayoutTransitionAsAFrameBoundary: false     # Offscreen applications workaround
@@ -443,6 +430,7 @@ LevelZero:
       MemoryType: 0  # -1 (All) , 1 (Host), 2 (Device), 4 (Shared)
       VirtualDeviceMemorySize: 1099511627776
       VirtualHostMemorySize: 1099511627776
+    DumpLayoutOnly: false
 
   Player:
     CaptureImages: false

@@ -65,7 +65,7 @@ bool IsReadOnlyObject(cl_kernel kernel, cl_uint index) {
       auto allocPtr = GetUsmPtrFromRegion(const_cast<void*>(arg.argValue),
                                           arg.kernelSetType == KernelSetType::normal)
                           .first;
-      const auto props = SD().GetUSMAllocState(allocPtr, EXCEPTION_MESSAGE).properties;
+      const auto& props = SD().GetUSMAllocState(allocPtr, EXCEPTION_MESSAGE).properties;
       isReadOnly = IsReadOnlyBuffer(0, props.data());
     }
   }
@@ -76,6 +76,13 @@ bool DumpableObject(KernelArgType type) {
          (type == KernelArgType::svm);
 }
 } // namespace
+
+void MaskAppend(std::string& str, const std::string& maskStr) {
+  if (str.size()) {
+    str += " | ";
+  }
+  str += maskStr;
+}
 
 COclLog::COclLog(LogLevel prefix, LogStyle style) : CLog(prefix, style) {}
 
@@ -1319,7 +1326,7 @@ std::string AppendKernelArgInfoOption(const std::string& options) {
 
 std::string AppendStreamPathToIncludePath(const std::string& options, const bool& hasHeaders) {
   const auto& cfg = Config::Get();
-  const auto streamPath =
+  const auto& streamPath =
       Config::IsPlayer() ? cfg.common.player.streamDir : cfg.common.recorder.dumpPath;
   const std::string includeStreamDir = "-I \"" + streamPath.string() + "\"";
   std::string new_options = AppendBuildOption(options, includeStreamDir);

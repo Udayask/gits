@@ -38,7 +38,12 @@ unsigned GetVirtualMemoryPageSize();
 void* GetPage(void* addr);
 const void* GetPage(const void* addr);
 
-enum PageMemoryProtection { READ_ONLY, READ_WRITE, WRITE_ONLY, NONE };
+enum PageMemoryProtection {
+  READ_ONLY,
+  READ_WRITE,
+  WRITE_ONLY,
+  NONE
+};
 bool SetPagesProtection(PageMemoryProtection access, void* ptr, size_t size = 1);
 
 class MemorySniffer;
@@ -107,14 +112,13 @@ typedef PagedMemoryRegionPtr* PagedMemoryRegionHandle;
 
 // ******************************************************************************************************************
 //
-// ExternalMemoryRegion - this class is used to get touched/modified regions of memory allocated using external
-// memory extension.
+// WriteWatchSniffer - this class is used to get touched/modified regions of memory allocated using WriteWatch
 //
 // ******************************************************************************************************************
-class ExternalMemoryRegion {
+class WriteWatchSniffer {
 public:
-  static std::vector<std::pair<void*, uint32_t>> GetTouchedPagesAndReset(void* ptr, uint32_t size);
-  static void ResetTouchedPages(void* ptr, uint32_t size);
+  static std::vector<std::pair<void*, size_t>> GetTouchedPagesAndReset(void* ptr, size_t size);
+  static void ResetTouchedPages(void* ptr, size_t size);
 };
 
 // ******************************************************************************************************************

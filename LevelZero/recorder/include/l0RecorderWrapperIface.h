@@ -25,6 +25,8 @@ public:
   virtual void CloseRecorderIfRequired() = 0;
   virtual CDriver& Drivers() const = 0;
   virtual void InitializeDriver() const = 0;
+  virtual bool IsAlive() const = 0;
+  virtual std::recursive_mutex& GetInterceptorMutex() const = 0;
 
 #include "l0WrapperFunctionsIface.h"
   virtual void zeCommandQueueExecuteCommandLists_pre(ze_result_t return_value,
@@ -32,6 +34,14 @@ public:
                                                      uint32_t numCommandLists,
                                                      ze_command_list_handle_t* phCommandLists,
                                                      ze_fence_handle_t hFence) const = 0;
+  virtual void zeCommandListImmediateAppendCommandListsExp_pre(
+      ze_result_t return_value,
+      ze_command_list_handle_t hCommandListImmediate,
+      uint32_t numCommandLists,
+      ze_command_list_handle_t* phCommandLists,
+      ze_event_handle_t hSignalEvent,
+      uint32_t numWaitEvents,
+      ze_event_handle_t* phWaitEvents) const = 0;
   virtual void zeCommandListAppendLaunchKernel_pre(ze_result_t return_value,
                                                    ze_command_list_handle_t hCommandList,
                                                    ze_kernel_handle_t hKernel,
@@ -74,6 +84,7 @@ public:
   virtual void TrackThread() const = 0;
   virtual bool IsAddressTranslationModeDisabled(UnifiedMemoryType type) const = 0;
   virtual void InjectMemoryReservationFree(ze_context_handle_t hContext) const = 0;
+  virtual void UpdateConditionMemoryProtection() const = 0;
 };
 } // namespace l0
 } // namespace gits

@@ -179,12 +179,12 @@ vulkan_other_primitives = [
 ]
 
 vulkan_enums = []
-for enum in enums_table:
-  vulkan_enums.append(enum['name'])
+for enum in get_enums():
+  vulkan_enums.append(enum.name)
 
 vulkan_structs = []
-for enum in structs_table:
-  vulkan_structs.append(enum['name'].rstrip('_'))
+for struct in get_structs():
+  vulkan_structs.append(struct.name.rstrip('_'))
 
 primitive_types = vulkan_enums + vulkan_uint32 + vulkan_uint64 + vulkan_union + vulkan_other_primitives
 
@@ -858,6 +858,7 @@ namespace Vulkan {
                   Csize.append(size[0])
                 else:
                   Csize.append('1')
+
               key_variable = key_name.replace('Vk', '').lower()
               key_decl = '_' + key_name.replace('Vk', '')
               argd = 'const ' + key_name + '* ' + key_variable
@@ -868,6 +869,8 @@ namespace Vulkan {
               argsDecl = ""
               for n, t in zip(Cnames, Ctypes):
                 argsDecl += '      std::unique_ptr<' + t + '> ' + n + ';\n'
+              if elem.get('passStructStorage') is True:
+                argsDecl += '      VkStructStoragePointerGITS _baseIn;\n'
 
               counter = 0
 
@@ -879,6 +882,16 @@ namespace Vulkan {
                 init_to_nullptr = '  } else {\n'
                 init_default = ''
                 function_operator = 'if (' + key_decl + ' == nullptr) {\n'
+
+              if elem.get('passStructStorage') is True:
+                function_operator += """
+    // Pass this structure through pNext
+    _baseIn = {
+        VK_STRUCTURE_TYPE_STRUCT_STORAGE_POINTER_GITS, // VkStructureType sType;
+        **_pNext,                                      // const void* pNext;
+        this                                           // const void* pStructStorage;
+    };\n\n"""
+
               function_operator += '    ' + key_decl + ' = std::make_unique<' + key_name + '>();\n'
               for n, w, t, s, ot in zip(Cnames, Cwraps, Ctypes, Csize, types):
                 if t != 'COutArgument':
@@ -913,9 +926,21 @@ namespace Vulkan {
                     function_operator += '      throw std::runtime_error(EXCEPTION_MESSAGE);\n'
                     function_operator += '    }\n'
                   else:
-                    function_operator += '    ' + key_decl + '->' + n.strip('_') + ' = **' + n + ';\n'
+                    member_value = '    ' + key_decl + '->' + n.strip('_') + ' = **' + n + ';\n'
+                    if elem.get('passStructStorage') is True:
+                      member_value = member_value.replace('**_pNext', '&_baseIn')
+                    function_operator += member_value
 
               mapped_pointers += '}\n  return returnMap;'
+              if elem.get('passStructStorage') is True:
+                init += """
+    // Pass data to vulkan arguments class
+    _baseIn = {
+        VK_STRUCTURE_TYPE_STRUCT_STORAGE_POINTER_GITS, // VkStructureType sType;
+        %(key_variable)s->pNext,                       // const void* pNext;
+        this                                           // const void* pStructStorage;
+    };
+    const_cast<%(unversioned_name)s*>(%(key_variable)s)->pNext = &_baseIn;\n""" % {'unversioned_name': key_name, 'key_variable': key_variable}
               if len(elem['vars']) > 0:
                 init += init_to_nullptr
                 init += '  }'
@@ -1144,12 +1169,12 @@ void thread_tracker() {
 
 namespace {
   // Avoid recording API - recursive functions.
-  uint32_t recursionDepth = 0;
-  const uint32_t disableDepth = 1000;
+  std::atomic<uint32_t> recursionDepth = 0;
+  const std::atomic<uint32_t> disableDepth = 1000;
 } // namespace
 
 void PrePostDisableVulkan() {
-  recursionDepth = disableDepth;
+  recursionDepth.store(disableDepth);
   CGitsPluginVulkan::_recorderFinished = true;
 }
 
@@ -1283,180 +1308,179 @@ namespace gits {
       types = []
       counter = 0
       versioned_name = add_version(key, elem.get('version'))
-      if elem['custom'] is not True:
-        if (elem['type'] != 'void'):
-          Cnames.append('_return_value')
-          typename = elem['type']
-          if elem.get('retVwrapType'):
-            Ctypes.append(elem.get('retVwrapType'))
-          elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types_nondisp and '*' in typename and 'const' not in typename:
-            typename_mod = typename.replace('*', '').replace('const ', '').replace(' ', '')
-            Ctypes.append('C'+typename_mod+'::CSArray')
-          elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types and '*' in typename and 'const' not in typename:
-            typename_mod = typename.replace('*', '').replace('const ', '').replace(' ', '')
-            Ctypes.append('C'+typename_mod+'::CSArray')
-          elif typename.replace('const ', '') in vulkan_uint32:
-            Ctypes.append('Cuint32_t')
-          elif typename.replace('const ', '') in vulkan_uint64:
-            Ctypes.append('Cuint64_t')
-          elif '*' in typename and typename.replace('const ', '').strip(' *') == 'void' and arg['name'] == 'pNext':
-            Ctypes.append('CpNextWrapper')
-          else:
-            Ctypes.append('C' + typename.replace('const ', ''))
-          types.append(typename.replace('*', '').replace('const ', '').replace(' ', ''))
-          if (elem.get('retVwrapParams')):
-            Cwraps.append(elem.get('retVwrapParams'))
-          else:
-            Cwraps.append('')
+      if (elem['type'] != 'void'):
+        Cnames.append('_return_value')
+        typename = elem['type']
+        if elem.get('retVwrapType'):
+          Ctypes.append(elem.get('retVwrapType'))
+        elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types_nondisp and '*' in typename and 'const' not in typename:
+          typename_mod = typename.replace('*', '').replace('const ', '').replace(' ', '')
+          Ctypes.append('C'+typename_mod+'::CSArray')
+        elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types and '*' in typename and 'const' not in typename:
+          typename_mod = typename.replace('*', '').replace('const ', '').replace(' ', '')
+          Ctypes.append('C'+typename_mod+'::CSArray')
+        elif typename.replace('const ', '') in vulkan_uint32:
+          Ctypes.append('Cuint32_t')
+        elif typename.replace('const ', '') in vulkan_uint64:
+          Ctypes.append('Cuint64_t')
+        elif '*' in typename and typename.replace('const ', '').strip(' *') == 'void' and arg['name'] == 'pNext':
+          Ctypes.append('CpNextWrapper')
+        else:
+          Ctypes.append('C' + typename.replace('const ', ''))
+        types.append(typename.replace('*', '').replace('const ', '').replace(' ', ''))
+        if (elem.get('retVwrapParams')):
+          Cwraps.append(elem.get('retVwrapParams'))
+        else:
+          Cwraps.append('')
 
-        remove_mapping = ""
-        for arg in elem['args']:
-          Cnames.append('_' + arg['name'])
-          typename = arg['type']#.strip(' *')
-          if arg.get('removeMapping') is True:
-            remove_mapping += "\n  %(name)s.RemoveMapping();" % {'name': '_' + arg['name']}
-          if arg.get('wrapType'):
-            Ctypes.append(arg['wrapType'])
-          elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types_nondisp and '*' in typename and 'const' not in typename:
-            typename_mod = typename.replace('*', '').replace('const ', '').replace(' ', '')
-            Ctypes.append('C'+typename_mod+'::CSArray')
-          elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types and '*' in typename and 'const' not in typename:
-            typename_mod = typename.replace('*', '').replace('const ', '').replace(' ', '')
-            Ctypes.append('C'+typename_mod+'::CSArray')
-          elif typename.replace('const ', '') in vulkan_uint32:
-            Ctypes.append('Cuint32_t')
-          elif typename.replace('const ', '') in vulkan_uint64:
-            Ctypes.append('Cuint64_t')
-          elif '*' in typename and typename.replace('const ', '').strip(' *') == 'void' and arg['name'] == 'pNext':
-            Ctypes.append('CpNextWrapper')
-          elif '*' in typename and typename.replace('const ', '').strip(' *') not in structs_names:
-            typename_mod = typename.replace('const ', '').strip(' *')
-            Ctypes.append('C' + typename_mod + '::CSArray')
-          else:
-            typename_mod = typename.replace('const ', '').strip(' *')
-            Ctypes.append('C' + typename_mod)
-          types.append(typename.replace('*', '').replace('const ', '').replace(' ', ''))
-          if arg.get('wrapParams'):
-            Cwraps.append(arg['wrapParams'])
-          elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types_nondisp and '*' in typename and 'const' not in typename:
-            Cwraps.append('1, ' + arg['name'])
-          elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types and '*' in typename and 'const' not in typename:
-            Cwraps.append('1, ' + arg['name'])  # uint64_t cast
-          elif typename.replace('const ', '').strip(' ') in vulkan_mapped_types_nondisp and '*' not in typename:
-            Cwraps.append(arg['name'])
-          elif typename.replace('const ', '').strip(' ') in vulkan_mapped_types and '*' not in typename:
-            Cwraps.append(arg['name'])  # uint64_t cast
-          else:
-            Cwraps.append('')
-          counter += 1
-        func = elem
-        argd = arg_decl(elem)
+      remove_mapping = ""
+      for arg in elem['args']:
+        Cnames.append('_' + arg['name'])
+        typename = arg['type']#.strip(' *')
+        if arg.get('removeMapping') is True:
+          remove_mapping += "\n  %(name)s.RemoveMapping();" % {'name': '_' + arg['name']}
+        if arg.get('wrapType'):
+          Ctypes.append(arg['wrapType'])
+        elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types_nondisp and '*' in typename and 'const' not in typename:
+          typename_mod = typename.replace('*', '').replace('const ', '').replace(' ', '')
+          Ctypes.append('C'+typename_mod+'::CSArray')
+        elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types and '*' in typename and 'const' not in typename:
+          typename_mod = typename.replace('*', '').replace('const ', '').replace(' ', '')
+          Ctypes.append('C'+typename_mod+'::CSArray')
+        elif typename.replace('const ', '') in vulkan_uint32:
+          Ctypes.append('Cuint32_t')
+        elif typename.replace('const ', '') in vulkan_uint64:
+          Ctypes.append('Cuint64_t')
+        elif '*' in typename and typename.replace('const ', '').strip(' *') == 'void' and arg['name'] == 'pNext':
+          Ctypes.append('CpNextWrapper')
+        elif '*' in typename and typename.replace('const ', '').strip(' *') not in structs_names:
+          typename_mod = typename.replace('const ', '').strip(' *')
+          Ctypes.append('C' + typename_mod + '::CSArray')
+        else:
+          typename_mod = typename.replace('const ', '').strip(' *')
+          Ctypes.append('C' + typename_mod)
+        types.append(typename.replace('*', '').replace('const ', '').replace(' ', ''))
+        if arg.get('wrapParams'):
+          Cwraps.append(arg['wrapParams'])
+        elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types_nondisp and '*' in typename and 'const' not in typename:
+          Cwraps.append('1, ' + arg['name'])
+        elif typename.replace('const ', '').strip(' *') in vulkan_mapped_types and '*' in typename and 'const' not in typename:
+          Cwraps.append('1, ' + arg['name'])  # uint64_t cast
+        elif typename.replace('const ', '').strip(' ') in vulkan_mapped_types_nondisp and '*' not in typename:
+          Cwraps.append(arg['name'])
+        elif typename.replace('const ', '').strip(' ') in vulkan_mapped_types and '*' not in typename:
+          Cwraps.append(arg['name'])  # uint64_t cast
+        else:
+          Cwraps.append('')
+        counter += 1
+      func = elem
+      argd = arg_decl(elem)
 
-        argsDecl = ""
-        for n, t in zip(Cnames, Ctypes):
-          argsDecl += '      ' + t + ' ' + n + ';\n'
+      argsDecl = ""
+      for n, t in zip(Cnames, Ctypes):
+        argsDecl += '      ' + t + ' ' + n + ';\n'
 
-        def undecorate(type):
-          # type: (str) -> str
-          """Strip the type to its core, e.g. const float* to just float."""
-          return type.replace('const ', '', 1).strip('* ')
+      def undecorate(type):
+        # type: (str) -> str
+        """Strip the type to its core, e.g. const float* to just float."""
+        return type.replace('const ', '', 1).strip('* ')
 
-        argInfos = ""
-        wrapTypes = list(Ctypes)
-        # Remove retval if present so the arguments match their wraps.
-        try:
-          wrapTypes.remove('CVkResult')
-        except ValueError:
-          pass
-        for arg, wraptype in zip(elem['args'], wrapTypes):
-          typename = arg['type']
-          numPtr = typename.count('*')
-          needs_ampersand = 'false'
+      argInfos = ""
+      wrapTypes = list(Ctypes)
+      # Remove retval if present so the arguments match their wraps.
+      try:
+        wrapTypes.remove('CVkResult')
+      except ValueError:
+        pass
+      for arg, wraptype in zip(elem['args'], wrapTypes):
+        typename = arg['type']
+        numPtr = typename.count('*')
+        needs_ampersand = 'false'
 
-          argInfos += '{ gits::Vulkan::ArgType::'
-          if undecorate(typename) in opaque_handles:
-            argInfos += 'OPAQUE_HANDLE'
-          elif undecorate(typename) in enums_table:
-            argInfos += 'ENUM'
-          elif undecorate(typename) in primitive_types:
-            argInfos += 'PRIMITIVE_TYPE'
-            if (undecorate(typename) in vulkan_union) and (numPtr == 1):
-              needs_ampersand = 'true'
-          elif undecorate(typename) in vulkan_structs:
-            argInfos += 'STRUCT'
-            if not wraptype.endswith('Array'):
-              needs_ampersand = 'true'
-          elif 'void*' in typename:
-            argInfos += 'OTHER'  # void* or void**
-          else:
-            argInfos += 'OTHER'
-            print("Warning: type \"" + typename + "\" is of unknown category.")
+        argInfos += '{ gits::Vulkan::ArgType::'
+        if undecorate(typename) in opaque_handles:
+          argInfos += 'OPAQUE_HANDLE'
+        elif undecorate(typename) in vulkan_enums: # TODO: We are looking for a str in list[str], so it works, right?
+          argInfos += 'ENUM'
+        elif undecorate(typename) in primitive_types:
+          argInfos += 'PRIMITIVE_TYPE'
+          if (undecorate(typename) in vulkan_union) and (numPtr == 1):
+            needs_ampersand = 'true'
+        elif undecorate(typename) in vulkan_structs:
+          argInfos += 'STRUCT'
+          if not wraptype.endswith('Array'):
+            needs_ampersand = 'true'
+        elif 'void*' in typename:
+          argInfos += 'OTHER'  # void* or void**
+        else:
+          argInfos += 'OTHER'
+          print("Warning: type \"" + typename + "\" is of unknown category.")
 
-          argInfos += ', ' + str(numPtr) + ', ' + needs_ampersand + ' }, // ' + typename + ' (' + wraptype + ')\n  '
-        argInfos = argInfos.strip('\n ')
+        argInfos += ', ' + str(numPtr) + ', ' + needs_ampersand + ' }, // ' + typename + ' (' + wraptype + ')\n  '
+      argInfos = argInfos.strip('\n ')
 
-        argsCall = ""
-        argsCallOrig = ""
-        wrapCall = ""
-        stateTrackCall = ""
-        for n in Cnames:
-          if n != '_return_value':
-            argsCall += '*' + n + ', '
-          argsCallOrig += n + '.Original(), '
-          wrapCall += n + ', '
-          stateTrackCall += '*' + n + ', '
-        argsCall = argsCall.strip(', ')
-        argsCallOrig = argsCallOrig.strip(', ')
-        wrapCall = wrapCall.strip(', ')
-        stateTrackCall = stateTrackCall.strip(', ')
+      argsCall = ""
+      argsCallOrig = ""
+      wrapCall = ""
+      stateTrackCall = ""
+      for n in Cnames:
+        if n != '_return_value':
+          argsCall += '*' + n + ', '
+        argsCallOrig += n + '.Original(), '
+        wrapCall += n + ', '
+        stateTrackCall += '*' + n + ', '
+      argsCall = argsCall.strip(', ')
+      argsCallOrig = argsCallOrig.strip(', ')
+      wrapCall = wrapCall.strip(', ')
+      stateTrackCall = stateTrackCall.strip(', ')
 
-        c = ""
-        inherit_type = 'CFunction'
-        run_name = 'Run'
-        if func.get('functionType') & FuncType.QUEUE_SUBMIT:
-          inherit_type = 'CQueueSubmitFunction'
-          run_name = 'RunImpl'
-        elif func.get('functionType') & FuncType.CREATE_IMAGE:
-          inherit_type = 'CImageFunction'
-          run_name = 'RunImpl'
-        if func.get('functionType') & FuncType.CREATE_BUFFER:
-          inherit_type = 'CBufferFunction'
-          run_name = 'RunImpl'
-        return_override = ""
-        if func['type'] != 'void':
-          return_override = "\n      virtual const CArgument* Return() const { return (stream_older_than(GITS_VULKAN_RETURN_VALUE_FIX) && Config::IsPlayer()) ? CFunction::Return() : &_return_value; }"
+      c = ""
+      inherit_type = 'CFunction'
+      run_name = 'Run'
+      if func.get('functionType') & FuncType.QUEUE_SUBMIT:
+        inherit_type = 'CQueueSubmitFunction'
+        run_name = 'RunImpl'
+      elif func.get('functionType') & FuncType.CREATE_IMAGE:
+        inherit_type = 'CImageFunction'
+        run_name = 'RunImpl'
+      if func.get('functionType') & FuncType.CREATE_BUFFER:
+        inherit_type = 'CBufferFunction'
+        run_name = 'RunImpl'
+      return_override = ""
+      if func['type'] != 'void':
+        return_override = "\n      virtual const CArgument* Return() const { return (stream_older_than(GITS_VULKAN_RETURN_VALUE_FIX) && Config::IsPlayer()) ? CFunction::Return() : &_return_value; }"
 
-        ccodePostActionNeeded = ""
-        if func.get('ccodePostActionNeeded') is False:
-          ccodePostActionNeeded = "\n      virtual bool CCodePostActionNeeded() const override { return false; }"
+      ccodePostActionNeeded = ""
+      if func.get('ccodePostActionNeeded') is False:
+        ccodePostActionNeeded = "\n      virtual bool CCodePostActionNeeded() const override { return false; }"
 
-        suffix = ""
+      suffix = ""
+      if func.get('ccodeWrap') is True:
+        suffix = "\n      virtual const char* Suffix() const { return \"_CCODEWRAP\"; }"
+
+      write_wrap_decl = ""
+      write_wrap_def = ""
+      if func.get('ccodeWriteWrap') is True:
+        write_wrap_decl += '\n      virtual void Write(CCodeOStream& stream) const override;'
+        write_wrap_decl += '\n      friend void C' + versioned_name + '_CCODEWRITEWRAP(CCodeOStream& stream, const C' + versioned_name + '& function);'
+        write_wrap_def += '\n\nvoid gits::Vulkan::C' + versioned_name + '::Write(CCodeOStream& stream) const {'
+        write_wrap_def += '\n  stream.select(stream.selectCCodeFile());'
+        write_wrap_def += '\n  C' + versioned_name + '_CCODEWRITEWRAP(stream, *this);'
+        write_wrap_def += '\n}'
         if func.get('ccodeWrap') is True:
-          suffix = "\n      virtual const char* Suffix() const { return \"_CCODEWRAP\"; }"
+          raise RuntimeError("If ccodeWriteWrap is enabled, ccodeWrap does "
+                             "not do anything. Having both enabled "
+                             "indicates a logic error.")
+      command_buffer_decl = ""
+      command_buffer_def = ""
+      if func.get('tokenCache') is not None:
+        command_buffer_decl = '\n      virtual VkCommandBuffer CommandBuffer();'
+        command_buffer_def = '\n\nVkCommandBuffer gits::Vulkan::C' + versioned_name + '::CommandBuffer() {'
+        command_buffer_def += '\n  return _commandBuffer.Original();'
+        command_buffer_def += '\n}'
 
-        write_wrap_decl = ""
-        write_wrap_def = ""
-        if func.get('ccodeWriteWrap') is True:
-          write_wrap_decl += '\n      virtual void Write(CCodeOStream& stream) const override;'
-          write_wrap_decl += '\n      friend void C' + versioned_name + '_CCODEWRITEWRAP(CCodeOStream& stream, const C' + versioned_name + '& function);'
-          write_wrap_def += '\n\nvoid gits::Vulkan::C' + versioned_name + '::Write(CCodeOStream& stream) const {'
-          write_wrap_def += '\n  stream.select(stream.selectCCodeFile());'
-          write_wrap_def += '\n  C' + versioned_name + '_CCODEWRITEWRAP(stream, *this);'
-          write_wrap_def += '\n}'
-          if func.get('ccodeWrap') is True:
-            raise RuntimeError("If ccodeWriteWrap is enabled, ccodeWrap does "
-                               "not do anything. Having both enabled "
-                               "indicates a logic error.")
-        command_buffer_decl = ""
-        command_buffer_def = ""
-        if func.get('tokenCache') is not None:
-          command_buffer_decl = '\n      virtual VkCommandBuffer CommandBuffer();'
-          command_buffer_def = '\n\nVkCommandBuffer gits::Vulkan::C' + versioned_name + '::CommandBuffer() {'
-          command_buffer_def += '\n  return _commandBuffer.Original();'
-          command_buffer_def += '\n}'
-
-        if len(func['args']) > 0 or func['type'] != 'void':
-          c = """
+      if len(func['args']) > 0 or func['type'] != 'void':
+        c = """
     class C%(versioned_name)s : public %(inherit_type)s, gits::noncopyable {
 %(argsDecl)s
       virtual CArgument &Argument(unsigned idx) override;
@@ -1477,8 +1501,8 @@ namespace gits {
       virtual std::set<uint64_t> GetMappedPointers();
       virtual void TokenBuffersUpdate();
     };""" % {'unversioned_name': key, 'versioned_name': versioned_name, 'return_override': return_override, 'id': make_id(key, func['version']), 'argc': len(func['args']), 'argd': argd, 'argsDecl': argsDecl, 'inherit_type': inherit_type, 'run_name': run_name, 'write_wrap_decl': write_wrap_decl, 'command_buffer_decl': command_buffer_decl, 'suffix': suffix, 'ccodePostActionNeeded': ccodePostActionNeeded, 'type': make_type(func)}
-        else:
-          c = """
+      else:
+        c = """
     class C%(versioned_name)s : public %(inherit_type)s, gits::noncopyable {
 %(argsDecl)s
       virtual CArgument &Argument(unsigned idx) override;
@@ -1498,66 +1522,66 @@ namespace gits {
       virtual std::set<uint64_t> GetMappedPointers();
       virtual void TokenBuffersUpdate();
     };""" % {'unversioned_name': key, 'versioned_name': versioned_name, 'id': make_id(key, func['version']), 'argc': len(func['args']), 'argsDecl': argsDecl, 'inherit_type': inherit_type, 'run_name': run_name, 'write_wrap_decl': write_wrap_decl, 'command_buffer_decl': command_buffer_decl, 'suffix': suffix, 'type': make_type(func)}
-        tokens_h.write(c + '\n')
+      tokens_h.write(c + '\n')
 
-        cargument = 'return get_cargument(__FUNCTION__, idx, '
-        count = 0
-        for arg in Cnames:
-          if (arg != '_return_value'):
-            cargument += arg + ', '
-            count = count + 1
-        cargument = cargument.strip(', ')
-        cargument += ');'
-        if (count == 0):
-          cargument = 'report_cargument_error(__FUNCTION__, idx);'
+      cargument = 'return get_cargument(__FUNCTION__, idx, '
+      count = 0
+      for arg in Cnames:
+        if (arg != '_return_value'):
+          cargument += arg + ', '
+          count = count + 1
+      cargument = cargument.strip(', ')
+      cargument += ');'
+      if (count == 0):
+        cargument = 'report_cargument_error(__FUNCTION__, idx);'
+      init = ''
+      if len(func['args']) > 0 or func['type'] != 'void':
+        init = ':\n  '
+      mapped_pointers = '\n  std::set<uint64_t> returnMap;\n  '
+      counter = 0
+      for n, w, t, o in zip(Cnames, Cwraps, Ctypes, types):
+        if t != 'COutArgument':
+          counter += 1
+          if (o not in primitive_types):
+            mapped_pointers += 'for (auto obj : ' + n + '.GetMappedPointers())\n    returnMap.insert((uint64_t)obj);\n  '
+          if w == '':
+            init += n + '(' + n.strip('_') + '), '
+          else:
+            init += n + '(' + w + '), '
+      if counter > 0:
+        init = init.strip(', ')
+      else:
         init = ''
-        if len(func['args']) > 0 or func['type'] != 'void':
-          init = ':\n  '
-        mapped_pointers = '\n  std::set<uint64_t> returnMap;\n  '
-        counter = 0
-        for n, w, t, o in zip(Cnames, Cwraps, Ctypes, types):
-          if t != 'COutArgument':
-            counter += 1
-            if (o not in primitive_types):
-              mapped_pointers += 'for (auto obj : ' + n + '.GetMappedPointers())\n    returnMap.insert((uint64_t)obj);\n  '
-            if w == '':
-              init += n + '(' + n.strip('_') + '), '
-            else:
-              init += n + '(' + w + '), '
-        if counter > 0:
-          init = init.strip(', ')
-        else:
-          init = ''
-        mapped_pointers += 'return returnMap;'
+      mapped_pointers += 'return returnMap;'
 
-        run_cmd = """Exec();
+      run_cmd = """Exec();
   StateTrack();
   RemoveMapping();"""
-        if func.get('runWrap') is True:
-          run_cmd = "%(name)s_WRAPRUN(%(wrapCall)s);" % {'name': func.get('runWrapName'), 'wrapCall': wrapCall}
-        exec_cmd = "drvVk.%(name)s(%(argsCall)s)" % {'name': key, 'argsCall': argsCall}
-        state_track = ""
-        if func.get('stateTrack') is True:
-          state_track = "\n  %(name)s_SD(%(argsCall)s);" % {'name': func.get('stateTrackName'), 'argsCall': stateTrackCall}
-        return_value = ""
-        return_value_end = ";"
-        if func.get('type') not in ('void', 'VkDeviceAddress'):
-          return_value = "_return_value.Assign("
-          return_value_end = ");"
-        token_buff_update = ""
-        if func.get('tokenCache') is not None:
-          token_buff_update = "\n  SD()._commandbufferstates[*_commandBuffer]->tokensBuffer.Add(new C%(name)s(%(argsCallOrig)s));" % {'name': versioned_name, 'argsCallOrig': argsCallOrig}
-          if func.get('runWrap') is not True:
-            run_cmd = """if (Config::Get().vulkan.player.execCmdBuffsBeforeQueueSubmit) {
+      if func.get('runWrap') is True:
+        run_cmd = "%(name)s_WRAPRUN(%(wrapCall)s);" % {'name': func.get('runWrapName'), 'wrapCall': wrapCall}
+      exec_cmd = "drvVk.%(name)s(%(argsCall)s)" % {'name': key, 'argsCall': argsCall}
+      state_track = ""
+      if func.get('stateTrack') is True:
+        state_track = "\n  %(name)s_SD(%(argsCall)s);" % {'name': func.get('stateTrackName'), 'argsCall': stateTrackCall}
+      return_value = ""
+      return_value_end = ";"
+      if func.get('type') not in ('void', 'VkDeviceAddress'):
+        return_value = "_return_value.Assign("
+        return_value_end = ");"
+      token_buff_update = ""
+      if func.get('tokenCache') is not None:
+        token_buff_update = "\n  SD()._commandbufferstates[*_commandBuffer]->tokensBuffer.Add(new C%(name)s(%(argsCallOrig)s));" % {'name': versioned_name, 'argsCallOrig': argsCallOrig}
+        if func.get('runWrap') is not True:
+          run_cmd = """if (Config::Get().vulkan.player.execCmdBuffsBeforeQueueSubmit) {
     TokenBuffersUpdate();
   } else {
     Exec();
     StateTrack();
     RemoveMapping();
   }"""
-        c = ""
-        if len(func['args']) > 0 or func['type'] != 'void':
-          c = """
+      c = ""
+      if len(func['args']) > 0 or func['type'] != 'void':
+        c = """
 /* ***************************** %(id)s *************************** */
 
 const std::array<gits::Vulkan::ArgInfo, %(argc)s> gits::Vulkan::C%(versioned_name)s::argumentInfos_ = {{
@@ -1608,8 +1632,8 @@ void gits::Vulkan::C%(versioned_name)s::TokenBuffersUpdate()
 void gits::Vulkan::C%(versioned_name)s::RemoveMapping()
 {%(remove_mapping)s
 }%(write_wrap_def)s%(command_buffer_def)s""" % {'id': make_id(key, func['version']), 'versioned_name': versioned_name, 'cargument': cargument, 'argc': len(func['args']), 'argd': argd, 'argInfos': argInfos, 'init': init, 'run_name': run_name, 'write_wrap_def': write_wrap_def, 'command_buffer_def': command_buffer_def, 'mapped_pointers': mapped_pointers, 'exec_cmd': exec_cmd, 'state_track': state_track, 'return_value': return_value, 'return_value_end': return_value_end, 'remove_mapping': remove_mapping, 'run_cmd': run_cmd, 'token_buff_update': token_buff_update}
-        else:
-          c = """
+      else:
+        c = """
 /* ***************************** %(id)s *************************** */
 
 const std::array<gits::Vulkan::ArgInfo, %(argc)s> gits::Vulkan::%(versioned_name)s::argumentInfos_ = {{
@@ -1638,7 +1662,7 @@ void gits::Vulkan::C%(versioned_name)s::%(run_name)s()
 {
   %(run)s
 }%(write_wrap_def)s%(command_buffer_def)s""" % {'id': make_id(key, func['version']), 'versioned_name': versioned_name, 'cargument': cargument, 'argc': len(func['args']), 'argInfos': argInfos, 'run': run, 'run_name': run_name, 'write_wrap_def': write_wrap_def, 'command_buffer_def': command_buffer_def, 'mapped_pointers': mapped_pointers}
-        tokens_c.write(c + '\n')
+      tokens_c.write(c + '\n')
   tokens_h_end = """  } // namespace Vulkan
 } // namespace gits
 """
@@ -1664,69 +1688,63 @@ namespace Vulkan {
   wrap_c.write(wrap_c_include)
   for key in sorted(functions.keys()):
     value = functions[key][-1]
-    if value.get('custom') is not True:
-      if (value.get('enabled') is True) or (value.get('recWrap') is True):
-        wrapper_pre_post = ""
-        if value.get('functionType') & FuncType.QUEUE_SUBMIT:
-          wrapper_pre_post = "QUEUE_SUBMIT_WRAPPER_PRE_POST\n  "
-        elif value.get('functionType') & FuncType.CREATE_IMAGE:
-          wrapper_pre_post = "CREATE_IMAGE_WRAPPER_PRE_POST\n  "
-        elif value.get('functionType') & FuncType.CREATE_BUFFER:
-          wrapper_pre_post = "CREATE_BUFFER_WRAPPER_PRE_POST\n  "
-        pre_token = ""
-        if value.get('preToken') is not None and (value.get('recWrap') is not True) and value.get('preToken') is not False:
-          pre_token = "_recorder.Schedule(new %(name)s);\n    " % {'name': value.get('preToken')}
-        pre_schedule = ""
-        if value.get('preSchedule') is not None and (value.get('recWrap') is not True) and value.get('preSchedule') is not False:
-          pre_schedule = "%(name)s;\n    " % {'name': value.get('preSchedule')}
-        post_token = ""
-        if value.get('postToken') is not None and (value.get('recWrap') is not True):
-          post_token = "\n    _recorder.Schedule(new %(name)s);\n" % {'name': value.get('postToken')}
-        rec_cond = ""
-        if value.get('recCond') and (value.get('recWrap') is not True):
-          rec_cond = "if (%(recCond)s) {" % {'recCond': value.get('recCond')}
-        elif (value.get('recCond') is not True) and (value.get('tokenCache') is not None) and (value.get('recWrap') is not True):
-          rec_cond = "if (_recorder.Running() && !Config::Get().vulkan.recorder.scheduleCommandBuffersBeforeQueueSubmit) {"
-        elif (value.get('recCond') is not True) and (value.get('recWrap') is not True):
-          rec_cond = "if (_recorder.Running()) {"
-        state_track = ""
-        rec_cond_end = ""
-        new_line = ""
-        if value.get('stateTrack') is True and (value.get('recWrap') is not True):
-          state_track = "\n  %(name)s_SD(%(argsCall)s);" % {'name': value.get('stateTrackName'), 'argsCall': arg_call(value)}
-        rec_wrap = ""
-        if (value.get('recWrap') is True):
-          rec_wrap = "%(name)s_RECWRAP(%(argsCall)s, _recorder);" % {'name': value.get('recWrapName'), 'argsCall': arg_call(value)}
-        else:
-          rec_cond_end = "\n  }"
-          new_line = "\n    "
-        schedule = ""
-        versioned_name = add_version(key, value.get('version'))
+    if (value.get('enabled') is True) or (value.get('recWrap') is True):
+      wrapper_pre_post = ""
+      if value.get('functionType') & FuncType.QUEUE_SUBMIT:
+        wrapper_pre_post = "QUEUE_SUBMIT_WRAPPER_PRE_POST\n  "
+      elif value.get('functionType') & FuncType.CREATE_IMAGE:
+        wrapper_pre_post = "CREATE_IMAGE_WRAPPER_PRE_POST\n  "
+      elif value.get('functionType') & FuncType.CREATE_BUFFER:
+        wrapper_pre_post = "CREATE_BUFFER_WRAPPER_PRE_POST\n  "
+      pre_token = ""
+      if value.get('preToken') is not None and (value.get('recWrap') is not True) and value.get('preToken') is not False:
+        pre_token = "_recorder.Schedule(new %(name)s);\n    " % {'name': value.get('preToken')}
+      post_token = ""
+      if value.get('postToken') is not None and (value.get('recWrap') is not True):
+        post_token = "\n    _recorder.Schedule(new %(name)s);\n" % {'name': value.get('postToken')}
+      rec_cond = ""
+      if (value.get('tokenCache') is not None) and (value.get('recWrap') is not True):
+        rec_cond = "if (_recorder.Running() && !Config::Get().vulkan.recorder.scheduleCommandBuffersBeforeQueueSubmit) {"
+      elif value.get('recWrap') is not True:
+        rec_cond = "if (_recorder.Running()) {"
+      state_track = ""
+      rec_cond_end = ""
+      new_line = ""
+      if value.get('stateTrack') is True and (value.get('recWrap') is not True):
+        state_track = "\n  %(name)s_SD(%(argsCall)s);" % {'name': value.get('stateTrackName'), 'argsCall': arg_call(value)}
+      rec_wrap = ""
+      if (value.get('recWrap') is True):
+        rec_wrap = "%(name)s_RECWRAP(%(argsCall)s, _recorder);" % {'name': value.get('recWrapName'), 'argsCall': arg_call(value)}
+      else:
+        rec_cond_end = "\n  }"
+        new_line = "\n    "
+      schedule = ""
+      versioned_name = add_version(key, value.get('version'))
 
-        if (value.get('recWrap') is not True):
-          schedule = "_recorder.Schedule(new C%(name)s(%(arg_call)s));" % {'name': versioned_name, 'arg_call': arg_call(value)}
-        tokenCache = ""
-        if (value.get('tokenCache') is not None) and (value.get('recWrap') is not True):
-          tokenCache = " else {\n    " + value.get('tokenCache')
-          tokenCache += ".Add(new C%(name)s(%(arg_call)s));" % {'name': versioned_name, 'arg_call': arg_call(value)}
-          tokenCache += "\n  }"
-        wc = """
+      if (value.get('recWrap') is not True):
+        schedule = "_recorder.Schedule(new C%(name)s(%(arg_call)s));" % {'name': versioned_name, 'arg_call': arg_call(value)}
+      tokenCache = ""
+      if (value.get('tokenCache') is not None) and (value.get('recWrap') is not True):
+        tokenCache = " else {\n    " + value.get('tokenCache')
+        tokenCache += ".Add(new C%(name)s(%(arg_call)s));" % {'name': versioned_name, 'arg_call': arg_call(value)}
+        tokenCache += "\n  }"
+      wc = """
 void CRecorderWrapper::%(name)s(%(arg_decl)s) const
 {
-  %(wrapper_pre_post)s%(rec_cond)s%(rec_wrap)s%(new_line)s%(pre_schedule)s%(pre_token)s%(schedule)s%(post_token)s%(rec_cond_end)s%(tokenCache)s%(state_track)s
-}""" % {'name': key, 'arg_decl': arg_decl(value), 'pre_schedule': pre_schedule, 'pre_token': pre_token, 'post_token': post_token, 'rec_cond': rec_cond, 'state_track': state_track, 'rec_wrap': rec_wrap, 'schedule': schedule, 'tokenCache': tokenCache, 'rec_cond_end': rec_cond_end, 'wrapper_pre_post': wrapper_pre_post, 'new_line': new_line}
-        wrap_c.write(wc + '\n')
-        wrap_h.write('void ' + key + '(' + arg_decl(value) + ') const override;\n')
-        wrap_i.write('virtual void ' + key + '(' + arg_decl(value) + ') const = 0;\n')
-      else:
-        wc = """
+  %(wrapper_pre_post)s%(rec_cond)s%(rec_wrap)s%(new_line)s%(pre_token)s%(schedule)s%(post_token)s%(rec_cond_end)s%(tokenCache)s%(state_track)s
+}""" % {'name': key, 'arg_decl': arg_decl(value), 'pre_token': pre_token, 'post_token': post_token, 'rec_cond': rec_cond, 'state_track': state_track, 'rec_wrap': rec_wrap, 'schedule': schedule, 'tokenCache': tokenCache, 'rec_cond_end': rec_cond_end, 'wrapper_pre_post': wrapper_pre_post, 'new_line': new_line}
+      wrap_c.write(wc + '\n')
+      wrap_h.write('void ' + key + '(' + arg_decl(value) + ') const override;\n')
+      wrap_i.write('virtual void ' + key + '(' + arg_decl(value) + ') const = 0;\n')
+    else:
+      wc = """
 void CRecorderWrapper::%(name)s(%(arg_decl)s) const
 {
   CALL_ONCE [] { Log(ERR) << "function %(name)s not implemented"; };
 }""" % {'name': key, 'arg_decl': arg_decl(value)}
-        wrap_c.write(wc + '\n')
-        wrap_h.write('void ' + key + '(' + arg_decl(value) + ') const override;\n')
-        wrap_i.write('virtual void ' + key + '(' + arg_decl(value) + ') const = 0;\n')
+      wrap_c.write(wc + '\n')
+      wrap_h.write('void ' + key + '(' + arg_decl(value) + ') const override;\n')
+      wrap_i.write('virtual void ' + key + '(' + arg_decl(value) + ') const = 0;\n')
   wrap_c.write('} // namespace Vulkan\n} // namespace gits\n')
 
 
@@ -1747,8 +1765,6 @@ namespace Vulkan {
 } // namespace gits
 """
   arguments_cpp_include = """#include "vulkanTools.h"
-#include "vulkanTools_lite.h"
-#include "vulkanArgumentsAuto.h"
 
 """
   arguments_cpp.write(arguments_cpp_include)
@@ -2195,11 +2211,11 @@ namespace Vulkan {
   arguments_h.write(arguments_h_end)
 
 
-enums = GetEnums()
-functions = GetFunctions()
-structs = GetStructs()
+enums = get_enums()
+functions = get_functions()
+structs = get_structs()
 
-enums_table = {}
+enums_table = {}  # TODO: It's a dict, not a table; rename it.
 structs_table = {}
 structs_enabled_table = {}
 functions_all_table = {}
@@ -2207,68 +2223,64 @@ functions_enabled_table = {}
 
 for e in enums:
   enum = {}
-  enum['vars'] = []
-  enum['size'] = 32
-  if e.get('size') is not None:
-    enum['size'] = int(e.get('size'))
-  i = 1
+  enum['size'] = e.size
 
-  for enumerator in e.get('enumerators'):
+  enum['vars'] = []
+  for enumerator in e.enumerators:
     var = {}
-    var['name'] = enumerator.get('name')
-    var['value'] = enumerator.get('value')
+    var['name'] = enumerator.name
+    var['value'] = enumerator.value
     enum['vars'].append(var)
-    i += 1
-  if enums_table.get(e.get('name')) is None:
-    enums_table[e.get('name')] = []
-  enums_table[e.get('name')].append(enum)
+  if enums_table.get(e.name) is None:
+    enums_table[e.name] = []
+  enums_table[e.name].append(enum)
 
 for s in structs:
   struct = {}
-  struct['enabled'] = s.get('enabled')
-  if s.get('name').strip('_') not in structs_names:
-    structs_names.append(s.get('name').strip('_'))
-  if (s.get('type')):
-    struct['type'] = s.get('type')
-  if (s.get('custom')):
-    struct['custom'] = s.get('custom')
-  if (s.get('constructorWrap')):
-    struct['constructorWrap'] = s.get('constructorWrap')
-  if (s.get('declarationNeededWrap')):
-    struct['declarationNeededWrap'] = s.get('declarationNeededWrap')
-  if (s.get('constructorArgs')):
-    struct['constructorArgs'] = s.get('constructorArgs')
-  if (s.get('declareArray')):
-    struct['declareArray'] = s.get('declareArray')
-  if (s.get('declareArrayOfArrays')):
-    struct['declareArrayOfArrays'] = s.get('declareArrayOfArrays')
-  if (s.get('version')):
-    struct['version'] = s.get('version')
+  struct['enabled'] = s.enabled
+  if s.name.strip('_') not in structs_names:
+    structs_names.append(s.name.strip('_'))
+  if (s.type):
+    struct['type'] = s.type
+  if (s.custom):
+    struct['custom'] = s.custom
+  if (s.constructor_wrap):
+    struct['constructorWrap'] = s.constructor_wrap
+  if (s.pass_struct_storage):
+    struct['passStructStorage'] = s.pass_struct_storage
+  if (s.declaration_needed_wrap):
+    struct['declarationNeededWrap'] = s.declaration_needed_wrap
+  if (s.constructor_arguments):
+    struct['constructorArgs'] = s.constructor_arguments
+  if (s.declare_array):
+    struct['declareArray'] = s.declare_array
+  if (s.declare_array_of_arrays):
+    struct['declareArrayOfArrays'] = s.declare_array_of_arrays
+  if (s.version):
+    struct['version'] = s.version
   else:
     struct['version'] = 0
   struct['vars'] = []
-  i = 1
-  while s.get('var'+str(i)):
+  for field in s.fields:
     var = {}
-    var['name'] = s.get('var'+str(i)).get('name')
-    var['type'] = s.get('var'+str(i)).get('type')
-    if(s.get('var'+str(i)).get('wrapType')):
-      var['wrapType'] = s.get('var'+str(i)).get('wrapType')
-    if(s.get('var'+str(i)).get('wrapParams')):
-      var['wrapParams'] = s.get('var'+str(i)).get('wrapParams')
-    if(s.get('var'+str(i)).get('count')):
-      var['count'] = s.get('var'+str(i)).get('count')
-    if(s.get('var'+str(i)).get('logCondition')):
-      var['logCondition'] = s.get('var'+str(i)).get('logCondition')
+    var['name'] = field.name
+    var['type'] = field.type
+    if(field.wrap_type is not None):
+      var['wrapType'] = field.wrap_type
+    if(field.wrap_params is not None):
+      var['wrapParams'] = field.wrap_params
+    if(field.count is not None):
+      var['count'] = field.count
+    if(field.log_condition is not None):
+      var['logCondition'] = field.log_condition
     struct['vars'].append(var)
-    i += 1
-  if structs_table.get(s.get('name')) is None:
-    structs_table[s.get('name')] = []
-  structs_table[s.get('name')].append(struct)
-  if (structs_enabled_table.get(s.get('name')) is None) and (struct['enabled'] is True):
-    structs_enabled_table[s.get('name')] = []
+  if structs_table.get(s.name) is None:
+    structs_table[s.name] = []
+  structs_table[s.name].append(struct)
+  if (structs_enabled_table.get(s.name) is None) and (struct['enabled'] is True):
+    structs_enabled_table[s.name] = []
   if struct['enabled'] is True:
-    structs_enabled_table[s.get('name')].append(struct)
+    structs_enabled_table[s.name].append(struct)
 
 for f in functions:
   function = {}
@@ -2277,172 +2289,88 @@ for f in functions:
   function['level'] = 'DeviceLevel'
   function['customDriver'] = False
   function['functionType'] = None
-  function['enabled'] = f.get('enabled')
-  function['custom'] = False
+  function['enabled'] = f.enabled
   function['version'] = 0
-  if f.get('inheritFrom'):
-    inherit_name = f.get('inheritFrom')
-    function['inheritName'] = inherit_name
-    for g in functions:
-      if g.get('name') == inherit_name:
-        if g.get('retV'):
-          function['type'] = g.get('retV').get('type')
-          if g.get('retV').get('wrapType'):
-            function['retVwrapType'] = g.get('retV').get('wrapType')
-          if g.get('retV').get('wrapParams'):
-            function['retVwrapParams'] = g.get('retV').get('wrapParams')
-        if g.get('type'):
-          function['functionType'] = g.get('type')
-        if g.get('custom'):
-          function['custom'] = g.get('custom')
-        if g.get('version'):
-          function['version'] = g.get('version')
-        if g.get('tokenCache'):
-          function['tokenCache'] = g.get('tokenCache')
-        i = 1
-        while g.get('arg'+str(i)):
-          arg = {}
-          arg['type'] = g.get('arg'+str(i)).get('type')
-          arg['name'] = g.get('arg'+str(i)).get('name')
-          if g.get('arg'+str(i)).get('wrapType'):
-            arg['wrapType'] = g.get('arg'+str(i)).get('wrapType')
-          if g.get('arg'+str(i)).get('wrapParams'):
-            arg['wrapParams'] = g.get('arg'+str(i)).get('wrapParams')
-          if g.get('arg'+str(i)).get('logCondition'):
-            arg['logCondition'] = g.get('arg'+str(i)).get('logCondition')
-          if g.get('arg'+str(i)).get('count'):
-            arg['count'] = g.get('arg'+str(i)).get('count')
-          if g.get('arg'+str(i)).get('removeMapping'):
-            arg['removeMapping'] = g.get('arg'+str(i)).get('removeMapping')
-          function['args'].append(arg)
-          i += 1
-        if g.get('preToken') is not None:
-          function['preToken'] = g.get('preToken')
-          function['preTokenName'] = inherit_name
-        if g.get('postToken') is not None:
-          function['postToken'] = g.get('postToken')
-          function['postTokenName'] = inherit_name
-        if g.get('stateTrack') is not None:
-          function['stateTrack'] = g.get('stateTrack')
-          function['stateTrackName'] = inherit_name
-        if g.get('recCond') is not None:
-          function['recCond'] = g.get('recCond')
-        if g.get('preSchedule') is not None:
-          function['preSchedule'] = g.get('preSchedule')
-        if g.get('recWrap') is not None:
-          function['recWrap'] = g.get('recWrap')
-          function['recWrapName'] = inherit_name
-        if g.get('runWrap') is not None:
-          function['runWrap'] = g.get('runWrap')
-          function['runWrapName'] = inherit_name
-        if g.get('ccodeWrap') is not None:
-          function['ccodeWrap'] = g.get('ccodeWrap')
-          function['ccodeWrapName'] = inherit_name
-        if g.get('ccodeWriteWrap') is not None:
-          function['ccodeWriteWrap'] = g.get('ccodeWriteWrap')
-          function['ccodeWriteWrapName'] = inherit_name
-        if g.get('ccodePostActionNeeded') is not None:
-          function['ccodePostActionNeeded'] = g.get('ccodePostActionNeeded')
-        if g.get('recExecWrap') is not None:
-          function['recExecWrap'] = g.get('recExecWrap')
-          function['recExecWrapName'] = inherit_name
-        if g.get('pluginWrap') is not None:
-          function['pluginWrap'] = g.get('pluginWrap')
-          function['pluginWrapName'] = inherit_name
-        if g.get('execPostRecWrap') is not None:
-          function['execPostRecWrap'] = g.get('execPostRecWrap')
-        if g.get('endFrameTag') is not None:
-          function['endFrameTag'] = g.get('endFrameTag')
-        if g.get('level') is not None:
-          function['level'] = g.get('level')
-        if g.get('customDriver') is not None:
-          function['customDriver'] = True
-  if f.get('retV'):
-    function['type'] = f.get('retV').get('type')
-    if f.get('retV').get('wrapType'):
-      function['retVwrapType'] = f.get('retV').get('wrapType')
-    if f.get('retV').get('wrapParams'):
-      function['retVwrapParams'] = f.get('retV').get('wrapParams')
-  if f.get('type'):
-    function['functionType'] = f.get('type')
-  if f.get('custom'):
-    function['custom'] = f.get('custom')
-  if f.get('version'):
-    function['version'] = f.get('version')
-  if f.get('tokenCache'):
-    function['tokenCache'] = f.get('tokenCache')
+  if retval := f.return_value:
+    function['type'] = retval.type
+    if retval.wrap_type:
+      function['retVwrapType'] = retval.wrap_type
+    if retval.wrap_params:
+      function['retVwrapParams'] = retval.wrap_params
+  if f.function_type:
+    function['functionType'] = f.function_type
+  if f.version:
+    function['version'] = f.version
+  if f.token_cache:
+    function['tokenCache'] = f.token_cache
   i = 1
 
-  while f.get('arg'+str(i)) or (i <= len(function['args'])):
-    if f.get('arg'+str(i)):
+  if len(f.args) != len(function['args']) and len(function['args']) != 0:
+    raise RuntimeError(f"Argcount mismatch: input has {len(f.args)}, while temp data dict has {len(function['args'])}.")
+  for other_arg in f.args:
+    if other_arg:
       arg = {}
-      arg['type'] = f.get('arg'+str(i)).get('type')
-      arg['name'] = f.get('arg'+str(i)).get('name')
-      if f.get('arg'+str(i)).get('wrapType'):
-        arg['wrapType'] = f.get('arg'+str(i)).get('wrapType')
-      if f.get('arg'+str(i)).get('wrapParams'):
-        arg['wrapParams'] = f.get('arg'+str(i)).get('wrapParams')
-      if f.get('arg'+str(i)).get('count'):
-        arg['count'] = f.get('arg'+str(i)).get('count')
-      if f.get('arg'+str(i)).get('logCondition'):
-        arg['logCondition'] = f.get('arg'+str(i)).get('logCondition')
-      if f.get('arg'+str(i)).get('removeMapping'):
-        arg['removeMapping'] = f.get('arg'+str(i)).get('removeMapping')
+      arg['type'] = other_arg.type
+      arg['name'] = other_arg.name
+      if other_arg.wrap_type:
+        arg['wrapType'] = other_arg.wrap_type
+      if other_arg.wrap_params:
+        arg['wrapParams'] = other_arg.wrap_params
+      if other_arg.count:
+        arg['count'] = other_arg.count
+      if other_arg.remove_mapping:
+        arg['removeMapping'] = other_arg.remove_mapping
       if i <= len(function['args']):
         function['args'][i-1] = arg
       else:
         function['args'].append(arg)
     i += 1
-  if f.get('preToken') is not None:
-    function['preToken'] = f.get('preToken')
-    function['preTokenName'] = f.get('name')
-  if f.get('postToken') is not None:
-    function['postToken'] = f.get('postToken')
-    function['postTokenName'] = f.get('name')
-  if f.get('stateTrack') is not None:
-    function['stateTrack'] = f.get('stateTrack')
-    function['stateTrackName'] = f.get('name')
-  if f.get('recCond') is not None:
-    function['recCond'] = f.get('recCond')
-  if f.get('preSchedule') is not None:
-    function['preSchedule'] = f.get('preSchedule')
-  if f.get('recWrap') is not None:
-    function['recWrap'] = f.get('recWrap')
-    function['recWrapName'] = f.get('name')
-  if f.get('runWrap') is not None:
-    function['runWrap'] = f.get('runWrap')
-    function['runWrapName'] = f.get('name')
-  if f.get('ccodeWrap') is not None:
-    function['ccodeWrap'] = f.get('ccodeWrap')
-    function['ccodeWrapName'] = f.get('name')
-  if f.get('ccodeWriteWrap') is not None:
-    function['ccodeWriteWrap'] = f.get('ccodeWriteWrap')
-    function['ccodeWriteWrapName'] = f.get('name')
-  if f.get('ccodePostActionNeeded') is not None:
-    function['ccodePostActionNeeded'] = f.get('ccodePostActionNeeded')
-  if f.get('recExecWrap') is not None:
-    function['recExecWrap'] = f.get('recExecWrap')
-    function['recExecWrapName'] = f.get('name')
-  if f.get('pluginWrap') is not None:
-    function['pluginWrap'] = f.get('pluginWrap')
-    function['pluginWrapName'] = f.get('name')
-  if f.get('execPostRecWrap') is not None:
-    function['execPostRecWrap'] = f.get('execPostRecWrap')
-  if f.get('endFrameTag') is not None:
-    function['endFrameTag'] = f.get('endFrameTag')
-  if f.get('level') is not None:
-    function['level'] = f.get('level')
-  if f.get('customDriver') is not None:
-    function['customDriver'] = True
-  if functions_all_table.get(f.get('name')) is None:
-    functions_all_table[f.get('name')] = []
-  if (functions_enabled_table.get(f.get('name')) is None) and (function['enabled'] is True):
-    functions_enabled_table[f.get('name')] = []
-  functions_all_table[f.get('name')].append(function)
-  functions_all_table[f.get('name')].sort(key=operator.itemgetter('version'))
+  if f.pre_token is not None:
+    function['preToken'] = f.pre_token
+    function['preTokenName'] = f.name
+  if f.post_token is not None:
+    function['postToken'] = f.post_token
+    function['postTokenName'] = f.name
+  if f.state_track is not None:
+    function['stateTrack'] = f.state_track
+    function['stateTrackName'] = f.name
+  if f.recorder_wrap is not None:
+    function['recWrap'] = f.recorder_wrap
+    function['recWrapName'] = f.name
+  if f.run_wrap is not None:
+    function['runWrap'] = f.run_wrap
+    function['runWrapName'] = f.name
+  if f.ccode_wrap is not None:
+    function['ccodeWrap'] = f.ccode_wrap
+    function['ccodeWrapName'] = f.name
+  if f.ccode_write_wrap is not None:
+    function['ccodeWriteWrap'] = f.ccode_write_wrap
+    function['ccodeWriteWrapName'] = f.name
+  if f.ccode_post_action_needed is not None:
+    function['ccodePostActionNeeded'] = f.ccode_post_action_needed
+  if f.recorder_exec_wrap is not None:
+    function['recExecWrap'] = f.recorder_exec_wrap
+    function['recExecWrapName'] = f.name
+  if f.plugin_wrap is not None:
+    function['pluginWrap'] = f.plugin_wrap
+    function['pluginWrapName'] = f.name
+  if f.exec_post_recorder_wrap is not None:
+    function['execPostRecWrap'] = f.exec_post_recorder_wrap
+  if f.end_frame_tag is not None:
+    function['endFrameTag'] = f.end_frame_tag
+  if f.level is not None:
+    function['level'] = f.level
+  if f.custom_driver is not None:
+    function['customDriver'] = f.custom_driver
+  if functions_all_table.get(f.name) is None:
+    functions_all_table[f.name] = []
+  if (functions_enabled_table.get(f.name) is None) and (function['enabled'] is True):
+    functions_enabled_table[f.name] = []
+  functions_all_table[f.name].append(function)
+  functions_all_table[f.name].sort(key=operator.itemgetter('version'))
   if function['enabled'] is True:
-    functions_enabled_table[f.get('name')].append(function)
-    functions_enabled_table[f.get('name')].sort(key=operator.itemgetter('version'))
+    functions_enabled_table[f.name].append(function)
+    functions_enabled_table[f.name].sort(key=operator.itemgetter('version'))
 
 generate_vulkan_header(enums_table, structs_table, functions_all_table)
 generate_prepost(functions_all_table)

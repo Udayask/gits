@@ -1173,7 +1173,7 @@ inline void vkCreateRayTracingPipelinesKHR_RECWRAP(
         std::vector<uint8_t> handle(handleSize);
         drvVk.vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pPipelines[p], g, 1,
                                                                 handleSize, handle.data());
-        pipelineCaptureReplayHandles.push_back(handle);
+        pipelineCaptureReplayHandles.push_back(std::move(handle));
 
         currentGroup.pShaderGroupCaptureReplayHandle = pipelineCaptureReplayHandles.back().data();
       }
@@ -1236,7 +1236,9 @@ void vkCmdBuildAccelerationStructuresKHR_RECWRAP(
       auto it = addressPatchers.find(
           CAccelerationStructureKHRState::globalAccelerationStructureBuildCommandIndex);
       if ((it != addressPatchers.end()) && (it->second.Count() > 0)) {
-        recorder.Schedule(new CGitsVkCmdPatchDeviceAddresses(commandBuffer, it->second));
+        recorder.Schedule(new CGitsVkCmdPatchDeviceAddresses(
+            commandBuffer, it->second,
+            CAccelerationStructureKHRState::globalAccelerationStructureBuildCommandIndex));
       }
     }
 

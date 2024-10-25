@@ -43,7 +43,8 @@ namespace l0 {
 void* get_proc_address(const char* name);
 
 IRecorderWrapper* CGitsPlugin::_recorderWrapper;
-std::unique_ptr<CGitsPlugin> CGitsPlugin::_loader;
+std::unique_ptr<CGitsLoader, CustomLoaderCleanup> CGitsPlugin::_loader(nullptr,
+                                                                       CustomLoaderCleanup());
 std::mutex CGitsPlugin::_mutex;
 bool CGitsPlugin::_initialized = false;
 
@@ -58,20 +59,15 @@ void fast_exit(int code) {
 } // namespace
 
 void CGitsPlugin::Initialize() {
-  if (_initialized) {
-    return;
-  }
-
   try {
     std::unique_lock<std::mutex> lock(_mutex);
     if (_initialized) {
       return;
     }
-
-    _loader.reset(new CGitsPlugin("GITSRecorderL0"));
+    _loader.reset(new CGitsLoader("GITSRecorderL0"));
     _recorderWrapper = (decltype(_recorderWrapper))_loader->GetRecorderWrapperPtr();
 
-    if (!_loader->Configuration().common.recorder.enabled) {
+    if (!_loader->GetConfiguration().common.recorder.enabled) {
       PrePostDisableLevelZero();
     } else {
       CGitsPlugin::_recorderWrapper->StreamFinishedEvent(PrePostDisableLevelZero);
@@ -94,15 +90,12 @@ void CGitsPlugin::Initialize() {
   }
 }
 
-void CGitsPlugin::ProcessTerminationDetected() {
-  static_cast<CGitsLoader*>(_loader.get())->ProcessTerminationDetected();
-}
-
 const Config& CGitsPlugin::Configuration() {
-  return static_cast<CGitsLoader*>(_loader.get())->GetConfiguration();
+  std::unique_lock<std::mutex> lock(_mutex);
+  return _loader->GetConfiguration();
 }
 
-CGitsPlugin::~CGitsPlugin() {
+void CGitsPlugin::ProcessTerminationDetected() {
   _recorderWrapper->MarkRecorderForDeletion();
   _recorderWrapper->CloseRecorderIfRequired();
   _initialized = false;

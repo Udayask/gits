@@ -28,6 +28,8 @@ public:
   void CloseRecorderIfRequired() override;
   CDriver& Drivers() const override;
   void InitializeDriver() const override;
+  bool IsAlive() const override;
+  std::recursive_mutex& GetInterceptorMutex() const override;
 
 #include "l0WrapperFunctions.h"
   void zeCommandQueueExecuteCommandLists_pre(ze_result_t return_value,
@@ -35,6 +37,14 @@ public:
                                              uint32_t numCommandLists,
                                              ze_command_list_handle_t* phCommandLists,
                                              ze_fence_handle_t hFence) const override;
+  void zeCommandListImmediateAppendCommandListsExp_pre(
+      ze_result_t return_value,
+      ze_command_list_handle_t hCommandListImmediate,
+      uint32_t numCommandLists,
+      ze_command_list_handle_t* phCommandLists,
+      ze_event_handle_t hSignalEvent,
+      uint32_t numWaitEvents,
+      ze_event_handle_t* phWaitEvents) const override;
   void zeCommandListAppendLaunchKernel_pre(ze_result_t return_value,
                                            ze_command_list_handle_t hCommandList,
                                            ze_kernel_handle_t hKernel,
@@ -74,6 +84,7 @@ public:
   virtual void TrackThread() const override;
   virtual bool IsAddressTranslationModeDisabled(UnifiedMemoryType type) const override;
   virtual void InjectMemoryReservationFree(ze_context_handle_t hContext) const override;
+  virtual void UpdateConditionMemoryProtection() const override;
 };
 } // namespace l0
 } // namespace gits

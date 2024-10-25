@@ -12,6 +12,7 @@
 #include "vulkanTools_lite.h"
 
 #ifndef BUILD_FOR_CCODE
+#include "istdhash.h"
 #include "vulkanFunctions.h"
 #include "vulkanStateTracking.h"
 #else
@@ -299,7 +300,8 @@ bool vulkanCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer bufferHandle, std:
   attachment->copiedBuffer = localBuffer;
   attachment->fileName = std::move(fileName);
   attachment->devMemory = localMemory;
-  SD()._commandbufferstates[commandBuffer]->renderPassResourceBuffers.push_back(attachment);
+  SD()._commandbufferstates[commandBuffer]->renderPassResourceBuffers.push_back(
+      std::move(attachment));
   return true;
 }
 
@@ -521,12 +523,12 @@ bool vulkanCopyImage(VkCommandBuffer commandBuffer,
             }
             auto& commandBufferState = SD()._commandbufferstates[commandBuffer];
             if (isResource) {
-              commandBufferState->renderPassResourceImages.push_back(attachment);
+              commandBufferState->renderPassResourceImages.push_back(std::move(attachment));
             } else {
               if (dumpingMode == VulkanDumpingMode::VULKAN_PER_RENDER_PASS) {
-                commandBufferState->renderPassImages.push_back(attachment);
+                commandBufferState->renderPassImages.push_back(std::move(attachment));
               } else if (dumpingMode == VulkanDumpingMode::VULKAN_PER_DRAW) {
-                commandBufferState->drawImages.push_back(attachment);
+                commandBufferState->drawImages.push_back(std::move(attachment));
               }
             }
           }
@@ -2028,8 +2030,8 @@ bool checkForSupportForQueues(VkPhysicalDevice physicalDevice,
     uint32_t requestedQueueFamilyIndex = requestedQueueCreateInfos[i].queueFamilyIndex;
     uint32_t requestedQueueCountForFamily = requestedQueueCreateInfos[i].queueCount;
 
-    auto currentFlags = availableQueueFamilies[i].queueFlags;
-    auto originalFlags = queueFamilyPropertiesOriginal[i].queueFlags;
+    auto currentFlags = availableQueueFamilies[requestedQueueFamilyIndex].queueFlags;
+    auto originalFlags = queueFamilyPropertiesOriginal[requestedQueueFamilyIndex].queueFlags;
 
 #ifdef GITS_PLATFORM_WINDOWS
     if (Config::Get().vulkan.player.renderDoc.mode != TVkRenderDocCaptureMode::NONE) {
@@ -2057,10 +2059,10 @@ bool checkForSupportForQueues(VkPhysicalDevice physicalDevice,
       return false;
     } else if (!isBitSet(currentFlags, originalFlags)) {
       Log(ERR) << "Queue families are not compatible!";
-      VkLog(ERR) << "Original queue family flags at index " << i << ": "
+      VkLog(ERR) << "Original queue family flags at index " << requestedQueueFamilyIndex << ": "
                  << (VkQueueFlagBits)originalFlags;
-      VkLog(ERR) << "Current platform queue family flags at index " << i << ": "
-                 << (VkQueueFlagBits)currentFlags;
+      VkLog(ERR) << "Current platform queue family flags at index " << requestedQueueFamilyIndex
+                 << ": " << (VkQueueFlagBits)currentFlags;
       return false;
     }
   }
@@ -2313,17 +2315,6 @@ void destroyDeviceLevelResources(VkDevice device) {
         }
         // Injected pipelines
         {
-          for (auto& deviceInternalPipelinePair :
-               SD().internalResources.internalPipelines.pipelinesMap) {
-            if ((device == VK_NULL_HANDLE) || (device == deviceInternalPipelinePair.first)) {
-              drvVk.vkDestroyPipeline(
-                  deviceInternalPipelinePair.first,
-                  deviceInternalPipelinePair.second.prepareDeviceAddressesForPatching, nullptr);
-              deviceInternalPipelinePair.second.prepareDeviceAddressesForPatching = VK_NULL_HANDLE;
-              drvVk.vkDestroyPipelineLayout(deviceInternalPipelinePair.first,
-                                            deviceInternalPipelinePair.second.layout, nullptr);
-            }
-          }
           if (device == VK_NULL_HANDLE) {
             SD().internalResources.internalPipelines.pipelinesMap.clear();
           } else {
@@ -2394,9 +2385,14 @@ void getRangesForMemoryUpdate(VkDeviceMemory memory,
   char* pointer = (char*)mapping->ppDataData.Value();
 
   // External memory option enabled
-  if (isUseExternalMemoryExtensionUsed()) {
-    auto touchedPages = ExternalMemoryRegion::GetTouchedPagesAndReset(
-        (char*)memoryState->externalMemory + mapping->offsetData.Value(), unmapSize);
+  if (isUseExternalMemoryExtensionUsed() || Config::Get().vulkan.recorder.writeWatchDetection) {
+    std::vector<std::pair<void*, size_t>> touchedPages;
+    if (isUseExternalMemoryExtensionUsed()) {
+      touchedPages = WriteWatchSniffer::GetTouchedPagesAndReset(
+          (char*)memoryState->externalMemory + mapping->offsetData.Value(), unmapSize);
+    } else {
+      touchedPages = WriteWatchSniffer::GetTouchedPagesAndReset(pointer, unmapSize);
+    }
 
     for (auto& page : touchedPages) {
       VkDeviceSize offset = (char*)page.first - (char*)pointer;
@@ -2540,7 +2536,19 @@ void flushShadowMemory(VkDeviceMemory memory, bool unmap) {
       return;
     }
   }
-  memoryState->shadowMemory->Flush((size_t)offset, (size_t)unmapSize);
+
+  if (Config::Get().vulkan.recorder.writeWatchDetection) {
+    std::vector<std::pair<void*, size_t>> touchedPages =
+        WriteWatchSniffer::GetTouchedPagesAndReset(pointer, unmapSize);
+
+    for (auto& page : touchedPages) {
+      VkDeviceSize totalOffset = ((char*)page.first - (char*)pointer) + offset;
+      VkDeviceSize size = page.second;
+      memoryState->shadowMemory->Flush((size_t)totalOffset, (size_t)size);
+    }
+  } else {
+    memoryState->shadowMemory->Flush((size_t)offset, (size_t)unmapSize);
+  }
 }
 
 std::set<uint64_t> getRelatedPointers(std::set<uint64_t>& originalSet) {
@@ -3177,13 +3185,11 @@ uint32_t getRayTracingShaderGroupCaptureReplayHandleSize(VkDevice device) {
   return it->second;
 }
 
-std::pair<std::shared_ptr<CDeviceMemoryState>, std::shared_ptr<CBufferState>> createTemporaryBuffer(
-    VkDevice device,
-    VkDeviceSize size,
-    VkBufferUsageFlags bufferUsage,
-    CCommandBufferState* commandBufferState,
-    VkMemoryPropertyFlags requiredMemoryPropertyFlags,
-    void* hostPointer) {
+TemporaryBufferPairType createTemporaryBuffer(VkDevice device,
+                                              VkDeviceSize size,
+                                              VkBufferUsageFlags bufferUsage,
+                                              CCommandBufferState* commandBufferState,
+                                              VkMemoryPropertyFlags requiredMemoryPropertyFlags) {
   auto& deviceState = SD()._devicestates[device];
 
   // Create buffer
@@ -3224,19 +3230,8 @@ std::pair<std::shared_ptr<CDeviceMemoryState>, std::shared_ptr<CBufferState>> cr
           1                                             // uint32_t                 deviceMask;
       };
 
-      if (bufferUsage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+      if (isBitSet(bufferUsage, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
         pNext = &memoryAllocateFlags;
-      }
-
-      VkImportMemoryHostPointerInfoEXT hostPointerInfo = {
-          VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT, // VkStructureType sType;
-          pNext,                                                 // const void* pNext;
-          VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT, // VkExternalMemoryHandleTypeFlagBits handleType;
-          hostPointer                                             // void* pHostPointer;
-      };
-
-      if (hostPointer) {
-        pNext = &hostPointerInfo;
       }
 
       memoryAllocateInfo = {
@@ -3268,16 +3263,155 @@ std::pair<std::shared_ptr<CDeviceMemoryState>, std::shared_ptr<CBufferState>> cr
   auto memoryBufferPair = std::make_pair(temporaryMemoryState, temporaryBufferState);
 
   if (commandBufferState) {
-    commandBufferState->temporaryBuffers.insert(memoryBufferPair);
+    commandBufferState->temporaryBuffers.push_back(memoryBufferPair);
   }
 
   return memoryBufferPair;
 }
 
+VkDescriptorSet getTemporaryDescriptorSet(VkDevice device,
+                                          CCommandBufferState& commandBufferState) {
+#define MAX_DESCRIPTOR_SETS 24
+
+  if ((commandBufferState.temporaryDescriptors.size() == 0) ||
+      (commandBufferState.temporaryDescriptors.back()->descriptorSetStateStoreList.size() ==
+       MAX_DESCRIPTOR_SETS)) {
+    VkDescriptorPoolSize poolSize = {
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, // VkDescriptorType    type;
+        MAX_DESCRIPTOR_SETS                // uint32_t            descriptorCount;
+    };
+
+    VkDescriptorPoolCreateInfo poolCreateInfo = {
+        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,     // VkStructureType                sType;
+        nullptr,                                           // const void*                    pNext;
+        VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, // VkDescriptorPoolCreateFlags    flags;
+        MAX_DESCRIPTOR_SETS, // uint32_t                       maxSets;
+        1,                   // uint32_t                       poolSizeCount;
+        &poolSize            // const VkDescriptorPoolSize*    pPoolSizes;
+    };
+
+    VkDescriptorPool pool = VK_NULL_HANDLE;
+    if (drvVk.vkCreateDescriptorPool(device, &poolCreateInfo, nullptr, &pool) != VK_SUCCESS) {
+      throw std::runtime_error("Could not create internal descriptor pool!");
+    }
+
+    auto poolState =
+        std::make_shared<CDescriptorPoolState>(&pool, &poolCreateInfo, SD()._devicestates[device]);
+
+    commandBufferState.temporaryDescriptors.push_back(std::move(poolState));
+  }
+
+  auto poolState = commandBufferState.temporaryDescriptors.back();
+
+  auto setLayoutState =
+      SD().internalResources.internalPipelines[device].getDescriptorSetLayoutState();
+  VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+  VkDescriptorSetAllocateInfo allocateInfo = {
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, // VkStructureType          sType
+      nullptr,                                        // const void             * pNext
+      poolState->descriptorPoolHandle,                // VkDescriptorPool         descriptorPool
+      1,                                              // uint32_t                 descriptorSetCount
+      &setLayoutState->descriptorSetLayoutHandle      // const VkDescriptorSetLayout * pSetLayouts
+  };
+
+  if (drvVk.vkAllocateDescriptorSets(device, &allocateInfo, &descriptorSet) != VK_SUCCESS) {
+    throw std::runtime_error("Could not allocate internal descriptor set!");
+  }
+
+  auto setState =
+      std::make_shared<CDescriptorSetState>(&descriptorSet, nullptr, poolState, setLayoutState);
+  poolState->descriptorSetStateStoreList.insert(std::move(setState));
+
+  return descriptorSet;
+}
+
+void injectCopyCommand(VkCommandBuffer commandBuffer,
+                       VkPipelineStageFlags srcPipelineStageFlags,
+                       VkPipelineStageFlags dstPipelineStageFlags,
+                       VkDeviceSize dataSize,
+                       VkBuffer srcBuffer,
+                       VkDeviceSize srcOffset,
+                       VkAccessFlags srcAccessMaskPre,
+                       VkAccessFlags srcAccessMaskPost,
+                       VkBuffer dstBuffer,
+                       VkDeviceSize dstOffset,
+                       VkAccessFlags dstAccessMaskPre,
+                       VkAccessFlags dstAccessMaskPost) {
+  // Pre-copy barrier
+  {
+    std::vector<VkBufferMemoryBarrier> preBarriers = {
+        VkBufferMemoryBarrier{
+            VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType sType;
+            nullptr,                                 // const void* pNext;
+            srcAccessMaskPre,                        // VkAccessFlags srcAccessMask;
+            VK_ACCESS_TRANSFER_READ_BIT,             // VkAccessFlags dstAccessMask;
+            VK_QUEUE_FAMILY_IGNORED,                 // uint32_t srcQueueFamilyIndex;
+            VK_QUEUE_FAMILY_IGNORED,                 // uint32_t dstQueueFamilyIndex;
+            srcBuffer,                               // VkBuffer buffer;
+            srcOffset,                               // VkDeviceSize offset;
+            dataSize                                 // VkDeviceSize size;
+        },
+        VkBufferMemoryBarrier{
+            VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType sType;
+            nullptr,                                 // const void* pNext;
+            dstAccessMaskPre,                        // VkAccessFlags srcAccessMask;
+            VK_ACCESS_TRANSFER_WRITE_BIT,            // VkAccessFlags dstAccessMask;
+            VK_QUEUE_FAMILY_IGNORED,                 // uint32_t srcQueueFamilyIndex;
+            VK_QUEUE_FAMILY_IGNORED,                 // uint32_t dstQueueFamilyIndex;
+            dstBuffer,                               // VkBuffer buffer;
+            dstOffset,                               // VkDeviceSize offset;
+            dataSize                                 // VkDeviceSize size;
+        }};
+
+    drvVk.vkCmdPipelineBarrier(commandBuffer, srcPipelineStageFlags, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               0, 0, nullptr, static_cast<uint32_t>(preBarriers.size()),
+                               preBarriers.data(), 0, nullptr);
+  }
+  // Copy operation
+  {
+    VkBufferCopy region = {
+        srcOffset, // VkDeviceSize srcOffset;
+        dstOffset, // VkDeviceSize dstOffset;
+        dataSize   // VkDeviceSize size;
+    };
+    drvVk.vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &region);
+  }
+  // Post-copy barrier
+  {
+    std::vector<VkBufferMemoryBarrier> postBarriers = {
+        VkBufferMemoryBarrier{
+            VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType sType;
+            nullptr,                                 // const void* pNext;
+            VK_ACCESS_TRANSFER_READ_BIT,             // VkAccessFlags srcAccessMask;
+            srcAccessMaskPost,                       // VkAccessFlags dstAccessMask;
+            VK_QUEUE_FAMILY_IGNORED,                 // uint32_t srcQueueFamilyIndex;
+            VK_QUEUE_FAMILY_IGNORED,                 // uint32_t dstQueueFamilyIndex;
+            srcBuffer,                               // VkBuffer buffer;
+            srcOffset,                               // VkDeviceSize offset;
+            dataSize                                 // VkDeviceSize size;
+        },
+        VkBufferMemoryBarrier{
+            VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, // VkStructureType sType;
+            nullptr,                                 // const void* pNext;
+            VK_ACCESS_TRANSFER_WRITE_BIT,            // VkAccessFlags srcAccessMask;
+            dstAccessMaskPost,                       // VkAccessFlags dstAccessMask;
+            VK_QUEUE_FAMILY_IGNORED,                 // uint32_t srcQueueFamilyIndex;
+            VK_QUEUE_FAMILY_IGNORED,                 // uint32_t dstQueueFamilyIndex;
+            dstBuffer,                               // VkBuffer buffer;
+            dstOffset,                               // VkDeviceSize offset;
+            dataSize                                 // VkDeviceSize size;
+        }};
+
+    drvVk.vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, dstPipelineStageFlags,
+                               0, 0, nullptr, static_cast<uint32_t>(postBarriers.size()),
+                               postBarriers.data(), 0, nullptr);
+  }
+}
+
 void mapMemoryAndCopyData(VkDevice device,
                           VkDeviceMemory destination,
                           VkDeviceSize offset,
-                          void* source,
+                          const void* source,
                           VkDeviceSize dataSize) {
   void* dst;
   if (drvVk.vkMapMemory(device, destination, offset, VK_WHOLE_SIZE, 0, &dst) != VK_SUCCESS) {
@@ -3332,51 +3466,9 @@ VkAccelerationStructureBuildControlDataGITS prepareAccelerationStructureControlD
   return {
       CAccelerationStructureKHRState::
           globalAccelerationStructureBuildCommandIndex, // uint32_t buildCommandIndex
-      VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,   // VkBuildAccelerationStructureModeKHR mode
-      VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR,       // VkAccelerationStructureTypeKHR type
-      SD()._commandbufferstates[commandBuffer]
-          ->commandPoolStateStore->deviceStateStore->deviceHandle, // VkDevice device;
-      VK_NULL_HANDLE,                         // VkAccelerationStructureKHR accelerationStructure
-      commandBuffer,                          // VkCommandBuffer commandBuffer;
-      getCommandExecutionSide(commandBuffer), // VkCommandExecutionSideGITS executionSide;
+      commandBuffer,                                    // VkCommandBuffer commandBuffer;
+      getCommandExecutionSide(commandBuffer)            // VkCommandExecutionSideGITS executionSide;
   };
-}
-
-VkAccelerationStructureBuildControlDataGITS prepareAccelerationStructureControlData(
-    VkAccelerationStructureBuildControlDataGITS controlData,
-    const VkAccelerationStructureBuildGeometryInfoKHR* buildInfo) {
-  controlData.mode = buildInfo->mode;
-  controlData.accelerationStructureType = buildInfo->type;
-  controlData.accelerationStructure = buildInfo->dstAccelerationStructure;
-
-  return controlData;
-}
-
-VkAccelerationStructureBuildControlDataGITS prepareAccelerationStructureControlData(
-    VkAccelerationStructureBuildControlDataGITS controlData, VkStructureType sType) {
-  controlData.sType = sType;
-
-  return controlData;
-}
-
-uint64_t prepareStateTrackingHash(const VkAccelerationStructureBuildControlDataGITS& controlData,
-                                  VkDeviceAddress deviceAddress,
-                                  uint32_t offset,
-                                  uint64_t stride,
-                                  uint32_t count) {
-  CAccelerationStructureKHRState::HashGenerator hashGenerator = {
-      controlData.accelerationStructure,     // VkAccelerationStructureKHR     accStructure;
-      deviceAddress,                         // VkDeviceAddress                deviceAddress;
-      stride,                                // uint64_t                       stride;
-      controlData.buildCommandIndex,         // uint32_t                       buildCommandIndex;
-      controlData.mode,                      // VkBuildAccelerationStructureModeKHR mode;
-      controlData.accelerationStructureType, // VkAccelerationStructureTypeKHR type;
-      controlData.sType,                     // VkStructureType                sType;
-      offset,                                // uint32_t                       offset;
-      count                                  // uint32_t                       count;
-  };
-  return CGits::Instance().ResourceManager2().getHash(RESOURCE_DATA_RAW, &hashGenerator,
-                                                      sizeof(hashGenerator));
 }
 
 namespace {
@@ -3402,7 +3494,41 @@ VkShaderModule createShaderModule(VkDevice device, uint32_t codeSize, uint32_t c
 
 } // namespace
 
-VkPipelineLayout createInternalPipelineLayout(VkDevice device) {
+std::shared_ptr<CDescriptorSetLayoutState> createInternalDescriptorSetLayout(VkDevice device) {
+  CAutoCaller autoCaller(drvVk.vkPauseRecordingGITS, drvVk.vkContinueRecordingGITS);
+  VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {
+      0,                                 // uint32_t              binding;
+      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, // VkDescriptorType      descriptorType;
+      1,                                 // uint32_t              descriptorCount;
+      VK_SHADER_STAGE_COMPUTE_BIT,       // VkShaderStageFlags    stageFlags;
+      nullptr                            // const VkSampler* pImmutableSamplers;
+  };
+
+  VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, // VkStructureType                     sType;
+      nullptr,                    // const void                        * pNext;
+      0,                          // VkDescriptorSetLayoutCreateFlags     flags;
+      1,                          // uint32_t                             bindingCount;
+      &descriptorSetLayoutBinding // const VkDescriptorSetLayoutBinding * pBindings;
+  };
+
+  VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+  VkResult result =
+      drvVk.vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCreateInfo, nullptr, &layout);
+  if ((result != VK_SUCCESS) || (layout == VK_NULL_HANDLE)) {
+    throw std::runtime_error(
+        "Could not create a descriptor set layout used for internal operations!");
+  }
+
+  auto layoutState = std::make_shared<CDescriptorSetLayoutState>(
+      &layout, &descriptorSetLayoutCreateInfo, SD()._devicestates[device]);
+
+  return layoutState;
+}
+
+VkPipelineLayout createInternalPipelineLayout(VkDevice device,
+                                              uint32_t descriptorSetLayoutCount,
+                                              VkDescriptorSetLayout* pDescriptorSetLayouts) {
   CAutoCaller autoCaller(drvVk.vkPauseRecordingGITS, drvVk.vkContinueRecordingGITS);
 
   VkPushConstantRange pushConstantsRange = {
@@ -3415,13 +3541,13 @@ VkPipelineLayout createInternalPipelineLayout(VkDevice device) {
       VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, // VkStructureType               sType
       nullptr,                                       // const void                  * pNext
       0,                                             // VkPipelineLayoutCreateFlags   flags
-      0,                                             // uint32_t                      setLayoutCount
-      nullptr,                                       // const VkDescriptorSetLayout * pSetLayouts
+      descriptorSetLayoutCount,                      // uint32_t                      setLayoutCount
+      pDescriptorSetLayouts,                         // const VkDescriptorSetLayout * pSetLayouts
       1,                  // uint32_t                      pushConstantRangeCount
       &pushConstantsRange // const VkPushConstantRange   * pPushConstantRanges
   };
 
-  VkPipelineLayout layout;
+  VkPipelineLayout layout = VK_NULL_HANDLE;
   VkResult result = drvVk.vkCreatePipelineLayout(device, &createInfo, nullptr, &layout);
   if ((result != VK_SUCCESS) || (layout == VK_NULL_HANDLE)) {
     throw std::runtime_error("Could not create a pipeline layout used by injected pipelines. "
@@ -3473,23 +3599,6 @@ VkPipeline createInternalPipeline(VkDevice device,
   return pipeline;
 }
 
-bool getStructStorageFromHash(hash_t hash,
-                              VkAccelerationStructureKHR accelerationStructure,
-                              void** ptr) {
-  TODO("Hopefully it will be removed after finding a proper way to pass metadata to Vulkan "
-       "arguments")
-  auto& accelerationStructureState = SD()._accelerationstructurekhrstates[accelerationStructure];
-  auto it = accelerationStructureState->stateTrackingHashMap.find(hash);
-
-  if (it != accelerationStructureState->stateTrackingHashMap.end()) {
-    *ptr = it->second;
-    return true;
-  } else {
-    *ptr = nullptr;
-    return false;
-  }
-}
-
 bool isVulkanAPIVersionSupported(uint32_t major, uint32_t minor, VkPhysicalDevice physicalDevice) {
   auto instanceState = SD()._physicaldevicestates[physicalDevice]->instanceStateStore;
   return (instanceState->vulkanVersionMajor > major) ||
@@ -3505,6 +3614,14 @@ void checkReturnValue(VkResult playerSideReturnValue,
                << "\" error which is different than the \"" << *recorderSideReturnValue
                << "\" value returned during recording. Exiting!";
     throw std::runtime_error("Return value mismatch error occurred.");
+  }
+}
+
+uint32_t GetHash(uint32_t size, const void* data) {
+  if (!(size % sizeof(uint32_t))) {
+    return (uint32_t)ISTDHash((const char*)data, size);
+  } else {
+    return (uint32_t)ISTDHashPadding((const char*)data, size);
   }
 }
 

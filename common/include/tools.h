@@ -21,6 +21,7 @@
 #if defined(GITS_PLATFORM_WINDOWS) || defined(GITS_PLATFORM_X11)
 #include "message_pump.h"
 #endif
+#include "dynamic_linker.h"
 
 #include <set>
 #include <map>
@@ -219,6 +220,7 @@ public:
       cost_capacity_ = 1;
     }
   }
+  ~ProducerConsumer() = default;
   ProducerConsumer(const ProducerConsumer&) = delete;
   ProducerConsumer& operator=(const ProducerConsumer&) = delete;
   ProducerConsumer(ProducerConsumer&&) = delete;
@@ -227,27 +229,29 @@ public:
   // producer is exhausted - no product is generated in such
   // event.
   bool consume(Product& product) {
-    std::unique_lock<std::mutex> lock(mutex_);
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
 
-    // Wait for loader thread to load up a chunk.
-    while (products_.empty()) {
-      if (exhausted_) {
-        return false;
+      // Wait for loader thread to load up a chunk.
+      while (products_.empty()) {
+        if (exhausted_) {
+          return false;
+        }
+        cond_.wait(lock);
       }
-      cond_.wait(lock);
+
+      products_[0].swap(product);
+      products_.pop_front();
+      cost_capacity_ += gits::get_product_cost(product);
+
+      // No need to notify producer thread if it will block
+      // anyways. Only notify him if queue is reasonably empty.
+      if (cost_capacity_ <= 0) {
+        return true;
+      }
     }
 
-    products_[0].swap(product);
-    products_.pop_front();
-    cost_capacity_ += gits::get_product_cost(product);
-
-    // No need to notify producer thread if it will block
-    // anyways. Only notify him if queue is resonably empty.
-    if (cost_capacity_ > 0) {
-      lock.unlock();
-      cond_.notify_one();
-    }
-
+    cond_.notify_one();
     return true;
   }
 
@@ -280,10 +284,11 @@ public:
   }
 
   void break_pipe() {
-    std::unique_lock<std::mutex> lock(mutex_);
-    exhausted_ = true;
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      exhausted_ = true;
+    }
 
-    lock.unlock();
     cond_.notify_one();
   }
 
@@ -301,7 +306,9 @@ public:
   typedef ProducerConsumer<WorkUnit> Queue;
 
   template <class T>
-  TaskFunction(Queue& q, T func) : function_(func), queue_(q) {}
+  TaskFunction(Queue& q, T func) : function_(std::move(func)), queue_(q) {}
+  TaskFunction(const TaskFunction& other) : function_(other.function_), queue_(other.queue_) {}
+  ~TaskFunction() = default;
   void operator()() {
     function_(queue_);
   }
@@ -321,9 +328,9 @@ public:
   Task(Task&&) = delete;
   Task& operator=(Task&&) = delete;
   template <class T>
-  void start(T func) {
+  void start(T&& func) {
     assert(thread_.size() == 0);
-    thread_.emplace_back(TaskFunction<WorkUnit>(queue_, func));
+    thread_.emplace_back(TaskFunction<WorkUnit>(queue_, std::forward<T>(func)));
   }
   bool running() const {
     return thread_.size() != 0;
@@ -428,7 +435,23 @@ public:
       fast_exit(1);
     }
   }
+  // Default constructor
+  ImageWriter() = default;
+
+  // User-defined copy constructor
+  ImageWriter(const ImageWriter& other) = delete;
+
+  // User-defined copy assignment operator
   ImageWriter& operator=(const ImageWriter& other) = delete;
+
+  // User-defined move constructor
+  ImageWriter(ImageWriter&& other) = default;
+
+  // User-defined move assignment operator
+  ImageWriter& operator=(ImageWriter&& other) = default;
+
+  // User-defined destructor
+  ~ImageWriter() = default;
 };
 
 #ifndef BUILD_FOR_CCODE
@@ -450,7 +473,7 @@ public:
       return 0;
     }
   }
-  void Init(bool pagealigned, size_t size, void* orig = 0);
+  void Init(bool pagealigned, size_t size, void* orig = 0, bool writeWatch = false);
   bool Initialized() const {
     return (_shadow.get() != 0);
   }
@@ -522,6 +545,7 @@ public:
                               const uint64_t compressedDataSize,
                               const uint64_t expectedUncompressedSize,
                               char* uncompressedData) = 0;
+  virtual uint64_t MaxCompressedSize(const uint64_t dataSize) = 0;
 };
 
 class LZ4StreamCompressor : public StreamCompressor {
@@ -534,6 +558,7 @@ public:
                               const uint64_t compressedDataSize,
                               const uint64_t expectedUncompressedSize,
                               char* uncompressedData) override;
+  virtual uint64_t MaxCompressedSize(const uint64_t dataSize) override;
 
 private:
   LZ4_stream_t ctx;
@@ -557,6 +582,7 @@ public:
                               const uint64_t compressedDataSize,
                               const uint64_t expectedUncompressedSize,
                               char* uncompressedData) override;
+  virtual uint64_t MaxCompressedSize(const uint64_t dataSize) override;
 
 private:
   ZSTD_CCtx* ZSTDContext;
@@ -569,5 +595,27 @@ private:
 #if defined(GITS_PLATFORM_WINDOWS)
 std::string GetRenderDocDllPath();
 #endif
+
+class SharedLibrary {
+  dl::SharedObject handle = nullptr;
+
+public:
+  SharedLibrary(const std::string& name) {
+    handle = dl::open_library(name.c_str());
+    if (handle == nullptr) {
+      Log(ERR) << dl::last_error();
+    }
+  }
+  ~SharedLibrary() {
+    dl::close_library(handle);
+  }
+  SharedLibrary(const SharedLibrary&) = delete;
+  SharedLibrary& operator=(const SharedLibrary&) = delete;
+  SharedLibrary(SharedLibrary&&) = delete;
+  SharedLibrary& operator=(SharedLibrary&&) = delete;
+  dl::SharedObject getHandle() const {
+    return handle;
+  }
+};
 
 } // namespace gits

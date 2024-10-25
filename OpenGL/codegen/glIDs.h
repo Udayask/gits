@@ -6,6 +6,9 @@
 //
 // ===================== end_copyright_notice ==============================
 
+// This file stores OpenGL API call IDs. When enabling new functions, their IDs
+// must be appended at the end. Reordering will break stream compatibility.
+
 // clang-format off
 ID_GL_ACCUM,
 ID_GL_ACCUMX_OES,
@@ -2215,3 +2218,4 @@ ID_GL_CLEAR_NAMED_BUFFER_SUB_DATA,
 ID_GL_GET_SYNCIV,
 ID_GL_TEXTURE_STORAGE_1D,
 ID_GL_TEXTURE_SUB_IMAGE_1D,
+ID_GL_BIND_IMAGE_TEXTURES,

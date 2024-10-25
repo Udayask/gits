@@ -48,6 +48,7 @@ class CRecorderWrapper : public IRecorderWrapper {
 
 public:
   CRecorderWrapper(CRecorder& recorder);
+  ~CRecorderWrapper() = default;
   CRecorderWrapper(const CRecorderWrapper& ref) = delete;
   CRecorderWrapper& operator=(const CRecorderWrapper& ref) = delete;
   void PauseRecording() override;
@@ -102,6 +103,7 @@ public:
                                    VkPhysicalDevice physicalDevice) const override;
   void SetConfig(Config const& cfg) const override;
   bool IsUseExternalMemoryExtensionUsed() const override;
+  bool IsSubcaptureBeforeRestorationPhase() const override;
 #include "vulkanRecorderWrapperAuto.h"
 };
 } // namespace Vulkan

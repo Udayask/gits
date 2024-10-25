@@ -10,7 +10,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(gits)
 
-find_package(Python3 COMPONENTS Interpreter)
+find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -29,14 +29,19 @@ endif()
 option(WITH_LEVELZERO "Build LevelZero component" ON)
 if(WITH_LEVELZERO)
   add_definitions(-DWITH_LEVELZERO)
-  if(Python3_VERSION VERSION_LESS "3.6")
-    message(FATAL_ERROR "LevelZero codegen requires Python 3.6+ to work correctly.")
-  endif()
 endif()
 
 execute_process(COMMAND ${Python3_EXECUTABLE} -c "import mako" RESULT_VARIABLE MAKO_IMPORT OUTPUT_QUIET ERROR_QUIET)
 if(NOT MAKO_IMPORT EQUAL 0)
   message(FATAL_ERROR "Mako templates not installed. GITS requires Mako to generate files. Use 'pip install Mako' to install.")
+endif()
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import requests" RESULT_VARIABLE REQUESTS_IMPORT OUTPUT_QUIET ERROR_QUIET)
+if(NOT REQUESTS_IMPORT EQUAL 0)
+  message(FATAL_ERROR "requests not installed. GITS requires requests to install dependencies. Use 'pip install requests' to install.")
+endif()
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import retrying" RESULT_VARIABLE RETRYING_IMPORT OUTPUT_QUIET ERROR_QUIET)
+if(NOT RETRYING_IMPORT EQUAL 0)
+  message(FATAL_ERROR "retrying not installed. GITS requires retrying to install dependencies. Use 'pip install retrying' to install.")
 endif()
 
 option(WITH_OCLOC "Build Ocloc component" ON)
@@ -231,10 +236,17 @@ set(CONFIG_COMPUTE_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Config/Compute/${GITS_CON
 set(CONFIG_GENERATOR "${CONFIG_GENERATOR_DIR}/gits_config_generator.py")
 set(CONFIG_TEMPLATE "${CONFIG_GENERATOR_DIR}/gits_config.yml.mako")
 
+if(SKIP_INSTALL_PATH)
+install(CODE "execute_process(COMMAND \"${Python3_EXECUTABLE}\" \"${CONFIG_GENERATOR}\" --templatepath \"${CONFIG_TEMPLATE}\" \
+  --outputpath \"${CONFIG_OUTPUT}\" --platform ${PLATFORM} --installpath skip)")
+install(CODE "execute_process(COMMAND \"${Python3_EXECUTABLE}\" \"${CONFIG_GENERATOR}\" --templatepath \"${CONFIG_TEMPLATE}\" \
+  --outputpath \"${CONFIG_COMPUTE_OUTPUT}\" --platform ${PLATFORM} --installpath skip --compute)")
+else()
 install(CODE "execute_process(COMMAND \"${Python3_EXECUTABLE}\" \"${CONFIG_GENERATOR}\" --templatepath \"${CONFIG_TEMPLATE}\" \
   --outputpath \"${CONFIG_OUTPUT}\" --platform ${PLATFORM} --installpath \"\${CMAKE_INSTALL_PREFIX}\")")
 install(CODE "execute_process(COMMAND \"${Python3_EXECUTABLE}\" \"${CONFIG_GENERATOR}\" --templatepath \"${CONFIG_TEMPLATE}\" \
   --outputpath \"${CONFIG_COMPUTE_OUTPUT}\" --platform ${PLATFORM} --installpath \"\${CMAKE_INSTALL_PREFIX}\" --compute)")
+endif(SKIP_INSTALL_PATH)
 
 install(FILES ${CONFIG_OUTPUT} DESTINATION Recorder/${OpenGL_INSTALL_SUBDIR})
 install(FILES ${CONFIG_OUTPUT} DESTINATION Recorder/${OpenGLES_INSTALL_SUBDIR})

@@ -74,10 +74,9 @@ bool load_l0_function_from_original_library(T& func, const char* name) {
   %if not is_latest_version(functions, func):
 <% continue %>
   %endif
-  %if func.get('component') != 'ze_gits_extension':
+  %if func.get('component') != 'ze_gits_extension' and func.get('enabled', True):
 #ifndef BUILD_FOR_CCODE
 int lua_${func.get('name')}(lua_State* L) {
-  std::unique_lock<std::recursive_mutex> lock(luaMutex);
   int top = lua_gettop(L);
   if (top != ${len(func['args'])}) {
     luaL_error(L, "invalid number of parameters");
@@ -117,24 +116,26 @@ ${func.get('type')} __zecall special_${func.get('name')}(
   %if func.get('component') != 'ze_gits_extension':
   bool call_orig = true;
 #ifndef BUILD_FOR_CCODE
-  if (gits::Config::Get().common.shared.useEvents && !bypass_luascript) {
-    auto L = CGits::Instance().GetLua().get();
-    bool exists = FunctionExists("${func.get('name')}", L);
-    if (exists) {
-      std::unique_lock<std::recursive_mutex> lock(luaMutex);
-      L0Log(TRACE, NO_PREFIX) << " Lua begin";
-      lua_getglobal(L, "${func.get('name')}");
-    %for arg in func['args']:
-      lua_push_ext(L, ${get_arg_name(arg['name'])});
-    %endfor
-      if (lua_pcall(L, ${len(func['args'])}, 1, 0) != 0) {
-        RaiseHookError("${func.get('name')}", L);
+  if (gits::Config::Get().common.shared.useEvents) {
+    std::unique_lock<std::recursive_mutex> lock(luaMutex);
+    if (!bypass_luascript) {
+      auto L = CGits::Instance().GetLua().get();
+      bool exists = FunctionExists("${func.get('name')}", L);
+      if (exists) {
+        L0Log(TRACE, NO_PREFIX) << " Lua begin";
+        lua_getglobal(L, "${func.get('name')}");
+      %for arg in func['args']:
+        lua_push_ext(L, ${get_arg_name(arg['name'])});
+      %endfor
+        if (lua_pcall(L, ${len(func['args'])}, 1, 0) != 0) {
+          RaiseHookError("${func.get('name')}", L);
+        }
+        call_orig = false;
+        const auto top = lua_gettop(L);
+        ret = lua_to_ext<ze_result_t>(L, top);  
+        lua_pop(L, top);
+        L0Log(TRACE, NO_PREFIX) << "Lua End";
       }
-      call_orig = false;
-      const auto top = lua_gettop(L);
-      ret = lua_to_ext<ze_result_t>(L, top);  
-      lua_pop(L, top);
-      L0Log(TRACE, NO_PREFIX) << "Lua End";
     }
   }
 #endif
@@ -208,11 +209,14 @@ const luaL_Reg exports[] = {
     %if not is_latest_version(functions, func):
 <% continue %>
     %endif
-    %if func.get('component') != 'ze_gits_extension':
+    %if func.get('component') != 'ze_gits_extension' and func.get('enabled', True):
   {"${func.get('name')}", lua_${func.get('name')}},
     %endif
   %endfor
   %for name, arg in arguments.items():
+    %if not is_latest_version(arguments, arg) or not arg.get('enabled', True):
+<% continue %>
+    %endif
     %if 'vars' in arg:
   {"create_${arg.get('name')}", create_${arg.get('name')}},
     %endif
@@ -228,7 +232,7 @@ void RegisterLuaDriverFunctions() {
 #endif
 } // namespace
 
-CDriver::CDriver() : initialized_(false), lib_(nullptr) {
+CDriver::CDriver() {
 %for name, func in functions.items():
   %if not is_latest_version(functions, func):
 <% continue %>

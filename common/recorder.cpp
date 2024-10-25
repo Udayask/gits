@@ -33,7 +33,10 @@
 #include "recorderBehaviors.h"
 #include "pragmas.h"
 #include "token.h"
+
+#ifdef WITH_OPENCL
 #include "openclHelperFunctions.h"
+#endif
 
 #if defined(GITS_PLATFORM_LINUX)
 #include <sys/stat.h>
@@ -153,6 +156,13 @@ gits::CRecorder::CRecorder()
   Log(INFO) << " GITS Recorder (" << inst.Version() << ")";
   Log(INFO) << "-----------------------------------------------------";
 
+  inst.GetMessageBus().subscribe({PUBLISHER_PLUGIN, TOPIC_LOG}, [](Topic t, const MessagePtr& m) {
+    auto msg = std::dynamic_pointer_cast<LogMessage>(m);
+    if (msg) {
+      CLog(msg->getLevel(), NORMAL) << msg->getText();
+    }
+  });
+
 #ifdef GITS_PLATFORM_WINDOWS
   // handling signals
   SignalsHandler();
@@ -161,7 +171,7 @@ gits::CRecorder::CRecorder()
 
   // create file data and register it in GITS
   if (config.common.recorder.enabled) {
-    auto outputpath = config.common.recorder.dumpPath;
+    auto& outputpath = config.common.recorder.dumpPath;
     std::filesystem::create_directories(outputpath);
 #if defined(GITS_PLATFORM_X11)
     struct sigaction action;
@@ -407,7 +417,7 @@ void gits::CRecorder::Register(std::unique_ptr<CBehavior> behavior) {
     _sc.scheduler.reset(new CScheduler(rec.tokenBurst, rec.tokenBurstNum));
   }
 
-  auto outputpath = rec.dumpPath;
+  auto& outputpath = rec.dumpPath;
   auto filePath = (outputpath / "stream").string();
   if (cfg.dumpBinary() && rec.enabled) {
     // create file
@@ -510,6 +520,11 @@ void gits::CRecorder::Start() {
 
   // update running flag
   //if (Config::Get().recorder.basic.enabled)
+
+#ifdef GITS_PLATFORM_WINDOWS
+  exitEventHandler.Start();
+#endif // GITS_PLATFORM_WINDOWS
+
   _running = true;
   _runningStarted = true;
 }
@@ -555,6 +570,11 @@ void gits::CRecorder::Stop() {
     }
     Scheduler().Register(new gits::CTokenFrameNumber(CToken::ID_CCODE_FINISH, inst.CurrentFrame()));
   }
+
+#ifdef GITS_PLATFORM_WINDOWS
+  exitEventHandler.Stop();
+#endif // GITS_PLATFORM_WINDOWS
+
   _running = false;
   _runningStarted = false;
 }
@@ -574,9 +594,13 @@ void gits::CRecorder::TrackThread(gits::ApisIface::TApi api) {
   if (currentThreadId != previousThreadId) {
     if (api == gits::ApisIface::OpenGL) {
       Scheduler().Register(new CTokenMakeCurrentThread(currentThreadId));
-    } else if (api == gits::ApisIface::OpenCL) {
+    }
+#ifdef WITH_OPENCL
+    else if (api == gits::ApisIface::OpenCL) {
       Scheduler().Register(new gits::OpenCL::CGitsClTokenMakeCurrentThread(currentThreadId));
-    } else {
+    }
+#endif
+    else {
       throw ENotImplemented("Thread tracking not implemented for this API.");
     }
     previousThreadId = currentThreadId;
@@ -601,7 +625,6 @@ void gits::CRecorder::Save() {
   CALL_ONCE[&] {
     Scheduler().WriteAll();
   };
-  CGits::Instance().CloseZipFileGLPrograms();
 }
 
 /**
@@ -626,12 +649,15 @@ void gits::CRecorder::FrameEnd() {
         sleep_millisec(api3dIface.CfgRec_EndFrameSleep());
       }
 
-      Schedule(new CTokenPlayerRecorderSync);
-
       //frame end time stamp
       if (Config::Get().common.recorder.benchmark) {
         inst.TimeSheet().add_frame_time("stamp", inst.Timers().program.Get());
         inst.TimeSheet().add_frame_time("cpu", inst.Timers().frame.Get());
+      }
+
+      if (IsMarkedForDeletion()) {
+        Close();
+        return;
       }
     }
 

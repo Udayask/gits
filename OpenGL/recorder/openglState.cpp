@@ -1263,7 +1263,7 @@ void gits::OpenGL::CVariableMaterial::Schedule(CScheduler& scheduler,
     if (_data[i].shininess != variable._data[i].shininess) {
       scheduler.Register(new CglMaterialfv(_faces[i], GL_SHININESS, &_data[i].shininess));
     }
-    if (!std::equal(_data[i].indexes, _data[i].indexes + size(_data[i].indexes),
+    if (!std::equal(_data[i].indexes, _data[i].indexes + std::size(_data[i].indexes),
                     variable._data[i].indexes)) {
       scheduler.Register(new CglMaterialfv(_faces[i], GL_COLOR_INDEXES, _data[i].indexes));
     }
@@ -4051,7 +4051,7 @@ void gits::OpenGL::CVariableGLSLInfo::Get() {
               GCC433WA_0(iterProgram)
                   ->Data()
                   .restore.uniformSubroutine[shaderType]
-                  .uniformSubroutineNames.push_back(uniformSubName);
+                  .uniformSubroutineNames.push_back(std::move(uniformSubName));
             }
           }
           drv.gl.glGetProgramStageiv(iterProgram->Name(), shaderType, GL_ACTIVE_SUBROUTINES,
@@ -4070,7 +4070,7 @@ void gits::OpenGL::CVariableGLSLInfo::Get() {
             GCC433WA_0(iterProgram)
                 ->Data()
                 .restore.uniformSubroutine[shaderType]
-                .subroutineNames.push_back(uniformSubName);
+                .subroutineNames.push_back(std::move(uniformSubName));
           }
         }
       }
@@ -4105,7 +4105,9 @@ void gits::OpenGL::CVariableGLSLInfo::Get() {
               drv.gl.glGetActiveUniformName(iterProgram->Name(), uniformIndices[idx],
                                             uniformMaxNameLength, &actualLength, &uniformName[0]);
               uniformName.resize(actualLength);
-              GCC433WA_0(iterProgram)->Data().restore.uniformNames.push_back(uniformName);
+              GCC433WA_0(iterProgram)
+                  ->Data()
+                  .restore.uniformNames.push_back(std::move(uniformName));
             }
           }
         }
@@ -6173,8 +6175,7 @@ void gits::OpenGL::CVariableFramebufferEXTInfo::Schedule(CScheduler& scheduler,
 gits::OpenGL::CVariableFramebufferInfo::CVariableFramebufferInfo() {
   if (curctx::IsEs2Plus() ||
       (curctx::IsOgl() &&
-       (curctx::Version() >= 300 || drv.gl.HasExtension("GL_ARB_framebuffer_object") ||
-        Config::Get().opengl.recorder.forceFBOSupportWA))) {
+       (curctx::Version() >= 300 || drv.gl.HasExtension("GL_ARB_framebuffer_object")))) {
     _supported = true;
   }
 }

@@ -25,7 +25,6 @@
 #include "l0Drivers.h"
 #include "l0Structs.h"
 #include "l0Tools.h"
-#include "openclTools.h"
 #include "recorder.h"
 #include "l0StateRestore.h"
 #include <cstdint>
@@ -240,16 +239,17 @@ bool CheckResidencyInContext(CStateDynamic& sd, const ze_context_handle_t& hCont
 
 bool ExistsAsKernelArgument(
     void* ptr, const std::vector<std::shared_ptr<CKernelExecutionInfo>>& executedKernels) {
+  const auto& sd = SD();
   for (const auto& kernel : executedKernels) {
     for (const auto& arg : kernel->GetArguments()) {
       if (arg.second.type == KernelArgType::buffer) {
         const auto kernelArgValuePtr =
-            GetUsmPtrFromRegion(const_cast<void*>(arg.second.argValue)).first;
+            GetAllocFromRegion(const_cast<void*>(arg.second.argValue), sd).first;
         if (kernelArgValuePtr == ptr) {
           return true;
         }
         const auto kernelArgOriginalValuePtr =
-            GetUsmPtrFromRegion(const_cast<void*>(arg.second.originalValue)).first;
+            GetAllocFromRegion(const_cast<void*>(arg.second.originalValue), sd).first;
         if (kernelArgOriginalValuePtr == ptr) {
           return true;
         }
@@ -374,6 +374,44 @@ void SchedulePotentialMemoryUpdate(CStateDynamic& sd,
       recorder.Schedule(new CGitsL0MemoryUpdate(usmPtr));
     } else {
       commandListState.ptrsToUpdate.insert(usmPtr);
+    }
+  }
+}
+
+void PrepareCommandListsExecution(CStateDynamic& sd,
+                                  CRecorder& recorder,
+                                  ze_context_handle_t& hContext,
+                                  uint32_t& numCommandLists,
+                                  ze_command_list_handle_t* phCommandLists) {
+  const auto& cfg = Config::Get();
+  if (recorder.Running()) {
+    if (IsBruteForceScanForIndirectPointersEnabled(cfg)) {
+      unsigned int indirectTypes = 0U;
+      std::vector<std::shared_ptr<CKernelExecutionInfo>> executedKernels;
+      for (auto i = 0U; i < numCommandLists; i++) {
+        const auto& commandListState =
+            sd.Get<CCommandListState>(phCommandLists[i], EXCEPTION_MESSAGE);
+        for (const auto& hKernelInfo : commandListState.appendedKernels) {
+          indirectTypes |= hKernelInfo->indirectUsmTypes;
+        }
+        for (auto& kernel : commandListState.appendedKernels) {
+          executedKernels.push_back(kernel);
+        }
+      }
+      BruteForceScanForIndirectAccess(recorder, sd, drv, indirectTypes, hContext, executedKernels);
+    }
+    for (auto i = 0U; i < numCommandLists; i++) {
+      auto& commandListState = sd.Get<CCommandListState>(phCommandLists[i], EXCEPTION_MESSAGE);
+      auto& ptrsToUpdate = commandListState.ptrsToUpdate;
+      for (auto& ptr : ptrsToUpdate) {
+        recorder.Schedule(new CGitsL0MemoryUpdate(ptr));
+      }
+      ptrsToUpdate.clear();
+      for (const auto& kernelInfo : commandListState.appendedKernels) {
+        for (auto ptr : GetPointersToUpdate(sd, kernelInfo->handle)) {
+          recorder.Schedule(new CGitsL0MemoryUpdate(ptr));
+        }
+      }
     }
   }
 }
@@ -673,37 +711,8 @@ inline void zeCommandQueueExecuteCommandLists_RECWRAP_PRE(
   }
   auto& commandQueueState = sd.Get<CCommandQueueState>(hCommandQueue, EXCEPTION_MESSAGE);
   commandQueueState.cmdQueueNumber = gits::CGits::Instance().CurrentCommandQueueExecCount();
-  if (recorder.Running()) {
-    if (IsBruteForceScanForIndirectPointersEnabled(Config::Get())) {
-      unsigned int indirectTypes = 0U;
-      std::vector<std::shared_ptr<CKernelExecutionInfo>> executedKernels;
-      for (auto i = 0U; i < numCommandLists; i++) {
-        const auto& commandListState =
-            sd.Get<CCommandListState>(phCommandLists[i], EXCEPTION_MESSAGE);
-        for (const auto& hKernelInfo : commandListState.appendedKernels) {
-          indirectTypes |= hKernelInfo->indirectUsmTypes;
-        }
-        for (auto& kernel : commandListState.appendedKernels) {
-          executedKernels.push_back(kernel);
-        }
-      }
-      BruteForceScanForIndirectAccess(recorder, sd, drv, indirectTypes, commandQueueState.hContext,
-                                      executedKernels);
-    }
-    for (auto i = 0U; i < numCommandLists; i++) {
-      auto& commandListState = sd.Get<CCommandListState>(phCommandLists[i], EXCEPTION_MESSAGE);
-      auto& ptrsToUpdate = commandListState.ptrsToUpdate;
-      for (auto& ptr : ptrsToUpdate) {
-        recorder.Schedule(new CGitsL0MemoryUpdate(ptr));
-      }
-      ptrsToUpdate.clear();
-      for (const auto& kernelInfo : commandListState.appendedKernels) {
-        for (auto ptr : GetPointersToUpdate(sd, kernelInfo->handle)) {
-          recorder.Schedule(new CGitsL0MemoryUpdate(ptr));
-        }
-      }
-    }
-  }
+  PrepareCommandListsExecution(sd, recorder, commandQueueState.hContext, numCommandLists,
+                               phCommandLists);
 }
 
 inline void zeCommandQueueExecuteCommandLists_RECWRAP(CRecorder& recorder,
@@ -1433,23 +1442,90 @@ inline void zeModuleCreate_RECWRAP(CRecorder& recorder,
   if (token != nullptr && return_value == ZE_RESULT_SUCCESS) {
     const auto moduleFileName =
         token->Argument<Cze_module_desc_t_V1::CSArray>(2U).Vector()[0]->GetProgramSourceName();
-    SD().Get<CModuleState>(*phModule, EXCEPTION_MESSAGE).moduleFileName = moduleFileName;
+    SD().Get<CModuleState>(*phModule, EXCEPTION_MESSAGE).moduleFileName = std::move(moduleFileName);
   }
+}
+
+inline void zeCommandListImmediateAppendCommandListsExp_RECWRAP_PRE(
+    CRecorder& recorder,
+    [[maybe_unused]] ze_result_t return_value,
+    ze_command_list_handle_t hCommandListImmediate,
+    uint32_t numCommandLists,
+    ze_command_list_handle_t* phCommandLists,
+    [[maybe_unused]] ze_event_handle_t hSignalEvent,
+    [[maybe_unused]] uint32_t numWaitEvents,
+    [[maybe_unused]] ze_event_handle_t* phWaitEvents) {
+  auto& sd = SD();
+  auto& commandListImmediateState =
+      sd.Get<CCommandListState>(hCommandListImmediate, EXCEPTION_MESSAGE);
+  if (sd.nomenclatureCounting) {
+    gits::CGits::Instance().CommandQueueExecCountUp();
+  }
+  PrepareCommandListsExecution(sd, recorder, commandListImmediateState.hContext, numCommandLists,
+                               phCommandLists);
 }
 
 inline void zeCommandListImmediateAppendCommandListsExp_RECWRAP(
     CRecorder& recorder,
-    [[maybe_unused]] ze_result_t return_value,
-    [[maybe_unused]] ze_command_list_handle_t hCommandListImmediate,
-    [[maybe_unused]] uint32_t numCommandLists,
-    [[maybe_unused]] ze_command_list_handle_t* phCommandLists,
-    [[maybe_unused]] ze_event_handle_t hSignalEvent,
-    [[maybe_unused]] uint32_t numWaitEvents,
-    [[maybe_unused]] ze_event_handle_t* phWaitEvents) {
-  if (recorder.Running()) {
-    Log(ERR) << "zeCommandListImmediateAppendCommandListsExp is not implemented.";
-    throw ENotImplemented(EXCEPTION_MESSAGE);
+    ze_result_t return_value,
+    ze_command_list_handle_t hCommandListImmediate,
+    uint32_t numCommandLists,
+    ze_command_list_handle_t* phCommandLists,
+    ze_event_handle_t hSignalEvent,
+    uint32_t numWaitEvents,
+    ze_event_handle_t* phWaitEvents) {
+  const auto& l0IFace = gits::CGits::Instance().apis.IfaceCompute();
+  auto& sd = SD();
+  const auto subcaptureMode = l0IFace.CfgRec_IsSubcapture();
+  if (!recorder.Running() && subcaptureMode && l0IFace.CfgRec_IsStartQueueSubmit()) {
+    auto cmdLists = GetCommandListsToSubcapture(recorder.Running(), l0IFace, sd, numCommandLists,
+                                                phCommandLists);
+    if (!cmdLists.empty()) {
+      recorder.Start();
+      recorder.Schedule(new CzeCommandListImmediateAppendCommandListsExp(
+          return_value, hCommandListImmediate, static_cast<uint32_t>(cmdLists.size()),
+          cmdLists.data(), hSignalEvent, numWaitEvents, phWaitEvents));
+      recorder.Schedule(
+          new CzeCommandListHostSynchronize(ZE_RESULT_SUCCESS, hCommandListImmediate, UINT64_MAX));
+    } else {
+      Log(ERR) << "Incorrect config LevelZero.Capture.Kernel.Range. The command list "
+               << l0IFace.CfgRec_StartCommandList()
+               << " doesn't exist inside immediate command list submission "
+               << l0IFace.CfgRec_StartCommandQueueSubmit();
+      throw EOperationFailed(EXCEPTION_MESSAGE);
+    }
+    if (l0IFace.CfgRec_IsStopQueueSubmit()) {
+      recorder.Stop();
+      recorder.MarkForDeletion();
+    }
+  } else if (recorder.Running()) {
+    if (subcaptureMode && l0IFace.CfgRec_IsStopQueueSubmit()) {
+      auto cmdLists = GetCommandListsToSubcapture(recorder.Running(), l0IFace, sd, numCommandLists,
+                                                  phCommandLists);
+      if (!cmdLists.empty()) {
+        recorder.Schedule(new CzeCommandListImmediateAppendCommandListsExp(
+            return_value, hCommandListImmediate, static_cast<uint32_t>(cmdLists.size()),
+            cmdLists.data(), hSignalEvent, numWaitEvents, phWaitEvents));
+        recorder.Schedule(new CzeCommandListHostSynchronize(ZE_RESULT_SUCCESS,
+                                                            hCommandListImmediate, UINT64_MAX));
+      } else {
+        Log(ERR) << "Incorrect config LevelZero.Capture.Kernel.Range. The command list "
+                 << l0IFace.CfgRec_StopCommandList()
+                 << " doesn't exist inside immediate command list submission "
+                 << l0IFace.CfgRec_StopCommandQueueSubmit();
+        throw EOperationFailed(EXCEPTION_MESSAGE);
+      }
+      recorder.Stop();
+      recorder.MarkForDeletion();
+    } else {
+      recorder.Schedule(new CzeCommandListImmediateAppendCommandListsExp(
+          return_value, hCommandListImmediate, numCommandLists, phCommandLists, hSignalEvent,
+          numWaitEvents, phWaitEvents));
+    }
   }
+  zeCommandListImmediateAppendCommandListsExp_SD(return_value, hCommandListImmediate,
+                                                 numCommandLists, phCommandLists, hSignalEvent,
+                                                 numWaitEvents, phWaitEvents);
 }
 
 inline void zeCommandListCreateCloneExp_RECWRAP(

@@ -35,8 +35,6 @@ gits::Config::Config() {
   common.player.tokenBurstNum = 5;
   common.recorder.tokenBurst = 10000;
   common.recorder.tokenBurstNum = 5;
-  common.player.keepApis = BitRange(true);
-  common.player.tokenLoadLimit = UINT_MAX;
   common.player.exitFrame = 1000000;
   common.recorder.extendedDiagnosticInfo = true;
 #ifdef GITS_PLATFORM_WINDOWS
@@ -49,7 +47,6 @@ gits::Config::Config() {
   opengl.player.keepDraws = BitRange(true);
   opengl.player.keepFrames = BitRange(true);
   opengl.player.scaleFactor = 1.0f;
-  opengl.recorder.updateMappedTexturesEveryNSwaps = 1;
   opengl.recorder.stripIndicesValues = 0xFFFFFFFF;
   opengl.recorder.restoreDefaultFB = true;
   opengl.recorder.suppressProgramBinary = true;
@@ -168,6 +165,8 @@ void gits::Config::SetCommon(const YAML::Node& commonYaml) {
       cfgRecorder.zipTextFiles = false;
       Log(WARN) << "High Integrity mode active - overriding ZipTextFiles to False.";
     }
+    cfgRecorder.compression.type.setFromString("None");
+    Log(WARN) << "High Integrity mode active - disabling compression.";
   }
   if (!cfgRecorder.eventScript.empty()) {
     auto& scriptPath = cfgRecorder.eventScript;
@@ -289,7 +288,6 @@ void gits::Config::SetOpenGL(const YAML::Node& openglYaml) {
                 "then recapture it to CCode.";
     throw EOperationFailed(EXCEPTION_MESSAGE);
   }
-  cfgOpenGLRecorder.updateMappedTexturesEveryNSwaps = 1;
 }
 
 void gits::Config::SetVulkan(const YAML::Node& vulkanYaml) {
@@ -353,6 +351,25 @@ void gits::Config::SetVulkan(const YAML::Node& vulkanYaml) {
 
   if (cfgVkRecorder.traceVkStructs) {
     common.shared.traceDataOpts.insert(TraceData::VK_STRUCTS);
+  }
+
+  switch (cfgVkRecorder.memoryTrackingMode) {
+  case TMemoryTrackingMode::SHADOW_AND_ACCESS_DETECTION:
+    cfgVkRecorder.shadowMemory = true;
+    cfgVkRecorder.memoryAccessDetection = true;
+    break;
+#ifdef GITS_PLATFORM_WINDOWS
+  case TMemoryTrackingMode::EXTERNAL:
+    cfgVkRecorder.useExternalMemoryExtension = true;
+    break;
+  case TMemoryTrackingMode::WRITE_WATCH:
+    cfgVkRecorder.writeWatchDetection = true;
+    cfgVkRecorder.shadowMemory = true;
+    break;
+#endif
+  case TMemoryTrackingMode::FULL_MEMORY_DUMP:
+    // everything is already set to false by default.
+    break;
   }
 #ifdef GITS_PLATFORM_WINDOWS
   if (cfgVkRecorder.renderDocCompatibility) {
@@ -485,7 +502,7 @@ void gits::Config::LoadLevelZeroSubcaptureSettings(const std::string& kernelInfo
     }
 
     iter = std::sregex_iterator(objectsTable[2].begin(), objectsTable[2].end(), pattern);
-    size = std::distance(iter, end);
+    size = std::distance(iter, std::move(end));
     auto& startKernel = levelzero.recorder.kernel.startKernel;
     auto& stopKernel = levelzero.recorder.kernel.stopKernel;
     startKernel = (unsigned)std::stoul((*iter++)[0], nullptr);

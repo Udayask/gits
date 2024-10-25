@@ -89,6 +89,7 @@ public:
                       ze_image_handle_t ptr,
                       uint32_t kernelNumber,
                       uint64_t kernelArgIndex);
+  CKernelArgumentDump(uint32_t kernelNumber, uint64_t kernelArgIndex);
   void UpdateIndexes(uint32_t kernelNum, uint32_t argIndex);
 };
 
@@ -110,6 +111,7 @@ struct CAllocState : public CState {
   std::vector<char> globalPtrAllocation;
   std::vector<char> originalGlobalPtrAllocation;
   bool savedForStateRestore = false;
+  bool beingExecuted = false;
 
   bool modified = false;
   uint32_t scannedTimes = 0U;
@@ -195,6 +197,7 @@ struct ArgInfo {
   const void* argValue = nullptr;
   const void* originalValue = nullptr;
   ze_image_desc_t desc = {};
+  std::string valueString;
   ArgInfo() = default;
 };
 
@@ -263,6 +266,23 @@ public:
   CKernelState(ze_module_handle_t hModule, const ze_kernel_desc_t* kernelDesc);
 };
 
+class QueueSubmissionSnapshot {
+public:
+  std::vector<std::shared_ptr<CKernelExecutionInfo>> kernelsExecutionInfo;
+  uint32_t cmdListNumber = 0U;
+  uint32_t cmdQueueNumber = 0U;
+  ze_context_handle_t hContext = nullptr;
+  ze_command_list_handle_t hCommandList = nullptr;
+  std::vector<CKernelArgumentDump>* readyArgVector = nullptr;
+  QueueSubmissionSnapshot(const ze_command_list_handle_t& cmdListHandle,
+                          const bool& isImmediate,
+                          const std::vector<std::shared_ptr<CKernelExecutionInfo>>& appendedKernels,
+                          const uint32_t& cmdListNum,
+                          const ze_context_handle_t& cmdListContext,
+                          const uint32_t& cmdQueueNum,
+                          std::vector<CKernelArgumentDump>* argumentsVector);
+};
+
 struct CCommandListState : public CState {
   using type = ze_command_list_handle_t;
   using states_type = std::map<type, std::unique_ptr<CCommandListState>>;
@@ -274,10 +294,16 @@ struct CCommandListState : public CState {
   bool isSync = false;
   bool isClosed = false;
   std::vector<std::shared_ptr<CKernelExecutionInfo>> appendedKernels;
+  std::vector<std::unique_ptr<QueueSubmissionSnapshot>> immediateCmdListSubmissionsDumpState;
+  std::vector<std::unique_ptr<QueueSubmissionSnapshot>> immediateCmdListNotSyncedSubmissions;
   uint32_t cmdListNumber = 0U;
   uint32_t cmdQueueNumber = 0U;
   struct Action {
-    enum Type { Normal, Reset, Signal };
+    enum Type {
+      Normal,
+      Reset,
+      Signal
+    };
     Type type = Type::Normal;
     ze_event_handle_t signalEvent = nullptr;
     std::vector<ze_event_handle_t> waitEvents;
@@ -303,7 +329,7 @@ public:
     for (auto i = 0U; i < numWaitEvents; i++) {
       action.waitEvents.push_back(phWaitEvents[i]);
     }
-    mockList.push_back(action);
+    mockList.push_back(std::move(action));
   }
 };
 
@@ -328,23 +354,6 @@ public:
   CImageState() = default;
   CImageState(ze_context_handle_t hContext, ze_device_handle_t hDevice, ze_image_desc_t desc);
   ~CImageState();
-};
-
-class QueueSubmissionSnapshot {
-public:
-  std::vector<std::shared_ptr<CKernelExecutionInfo>> kernelsExecutionInfo;
-  uint32_t cmdListNumber = 0U;
-  uint32_t cmdQueueNumber = 0U;
-  ze_context_handle_t hContext = nullptr;
-  ze_command_list_handle_t hCommandList = nullptr;
-  std::vector<CKernelArgumentDump>* readyArgVector = nullptr;
-  QueueSubmissionSnapshot(const ze_command_list_handle_t& cmdListHandle,
-                          const bool& isImmediate,
-                          const std::vector<std::shared_ptr<CKernelExecutionInfo>>& appendedKernels,
-                          const uint32_t& cmdListNum,
-                          const ze_context_handle_t& cmdListContext,
-                          const uint32_t& submissionNum,
-                          std::vector<CKernelArgumentDump>* argumentsVector);
 };
 
 struct CCommandQueueState : public CState {
@@ -451,6 +460,9 @@ struct CEventState : public CState {
   using states_type = std::unordered_map<type, std::unique_ptr<CEventState>>;
   ze_event_pool_handle_t hEventPool = nullptr;
   ze_event_desc_t desc = {};
+  ze_command_list_handle_t immediateCmdListExecutingCmdLists = nullptr;
+  bool canBeSynced = false;
+  bool executionIsSynced = false;
 
 public:
   CEventState() = default;
@@ -513,6 +525,27 @@ public:
   void Add(const T1& key1, const T2& key2, const K& value) {
     zeKernels[GetExecutionKeyId()][key1][key2] = value;
   }
+  template <typename T1, typename T2, typename T3, typename K>
+  void Add(const T1& key1, const T2& key2, const T3& key3, const K& value) {
+    zeKernels[GetExecutionKeyId()][key1][key2][key3] = value;
+  }
+};
+
+struct GlobalSubmissionTracker {
+  struct QueueSubmissionTracker {
+    ze_command_list_handle_t hCommandList = nullptr;
+    std::shared_ptr<CKernelExecutionInfo> executionInfo;
+    QueueSubmissionTracker() = default;
+    QueueSubmissionTracker(const ze_command_list_handle_t& cmdListHandle,
+                           std::shared_ptr<CKernelExecutionInfo> kernelExecutionInfo)
+        : hCommandList(cmdListHandle), executionInfo(std::move(kernelExecutionInfo)) {}
+  };
+  uint32_t submissionId = 0;
+  std::map<uint32_t, std::unique_ptr<QueueSubmissionTracker>> queueSubmissionTracker;
+  GlobalSubmissionTracker() = default;
+  void Add(ze_command_list_handle_t hCommandList,
+           std::shared_ptr<CKernelExecutionInfo> currentKernelInfo);
+  void SyncCheck();
 };
 
 class CStateDynamic {
@@ -536,6 +569,7 @@ private:
 
 public:
   LayoutBuilder layoutBuilder;
+  GlobalSubmissionTracker gst;
   std::unordered_set<ze_module_handle_t> scanningGlobalPointersMode;
   bool nomenclatureCounting = true;
   bool stateRestoreFinished = false;

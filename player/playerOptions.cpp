@@ -65,15 +65,17 @@ void obsolete_args_override(int& argc, char**& argv) {
     return (arg == "-" + ref) || (arg == "--" + ref);
   };
   auto remove_from_lines = [&](const std::string& ref, bool has_arg) -> void {
-    for (size_t i = 0; i < lines.size(); ++i) {
+    size_t i = 0;
+    while (i < lines.size()) {
       if (matches(lines[i], ref)) {
         auto last = lines.begin() + i + 1;
         if (last != lines.end() && has_arg) {
           last++;
         }
         lines.erase(lines.begin() + i, last);
-        i--;
         Log(WARN) << "Option " << ref << " is obsoleted and will have no effect";
+      } else {
+        i++;
       }
     }
   };
@@ -473,11 +475,6 @@ bool configure_player(int argc, char** argv) {
       "Specified coordinates (e.g. 100x100) will be used as position of "
       "all windows created during stream playback. Window position updates will be inhibited.");
 
-  TypedOption<bool> optionSyncWithRecorder(
-      options, OPTION_GROUP_PLAYBACK, 0, "syncWithRecorder",
-      "Playback will synchronize with recorder timings by sleeping "
-      "on frame boundary until time of recorder in that place is reached.");
-
   TypedOption<BitRange> optionKeepDraws(options, OPTION_GROUP_PLAYBACK, 0, "keepDraws",
                                         "List of drawcall numbers to be executed by "
                                         "gits during playback. Rest of drawcalls won't be executed."
@@ -486,15 +483,6 @@ bool configure_player(int argc, char** argv) {
                                         "  * pattern = draw_list | draw_list/Repeat-Count"
                                         "  * draw_list = element | draw_list, element\n"
                                         "  * element = Number | Begin-End | Begin-End:Step");
-
-  TypedOption<BitRange> optionKeepApis(options, OPTION_GROUP_PLAYBACK, 0, "keepApis",
-                                       "List of APIs numbers to be executed by "
-                                       "gits during playback. Rest of drawcalls won't be executed."
-                                       "Specified as single string without spaces of "
-                                       "following format: \n"
-                                       "  * pattern = draw_list | draw_list/Repeat-Count"
-                                       "  * draw_list = element | draw_list, element\n"
-                                       "  * element = Number | Begin-End | Begin-End:Step");
 
   TypedOption<BitRange> optionKeepFrames(
       options, OPTION_GROUP_PLAYBACK, 0, "keepFrames",
@@ -787,12 +775,6 @@ bool configure_player(int argc, char** argv) {
                                 "GITS will not play specified file but "
                                 "instead will create some statistics about it.");
 
-  TypedOption<bool> optionStatsVerb(
-      options, OPTION_GROUP_METRICS, 0, "statsVerb",
-      "Requires '-s'/'-stats' to be effective. "
-      "Produced statistics will contain more in depth information about the "
-      "stream (like list of unique 'GLenum' variables used by recorded "
-      "functions).");
   TypedOption<bool> optionBenchmark(
       options, OPTION_GROUP_METRICS, 'b', "benchmark",
       "Enables performance measurement in OpenGL streams on frame base."
@@ -916,12 +898,6 @@ bool configure_player(int argc, char** argv) {
       "replayed on another platform. Without it, some unimportant attribute mismatch could cause "
       "the driver to return no usable pixel formats.");
 
-  TypedOption<int> optionForcePortableWglDepthBits(
-      options, OPTION_GROUP_WORKAROUND, 0, "forcePortableWglDepthBits",
-      "Sets WGL_DEPTH_BITS_ARB attribute to given number of bits, when WGL portability layer is "
-      "being used",
-      GITS_PLATFORM_BIT_WINDOWS);
-
   TypedOption<bool> optionShowWindowsWA(options, OPTION_GROUP_WORKAROUND, 0, "showWindowsWA",
                                         "Enables workaround that makes all windows visible "
                                         "all the time by default");
@@ -973,10 +949,6 @@ bool configure_player(int argc, char** argv) {
   TypedOption<bool> optionLogLoadedTokens(options, OPTION_GROUP_INTERNAL, 0, "logLoadedTokens",
                                           "Prints token names after they are loaded.");
 
-  TypedOption<int> optionTokenLoadLimit(options, OPTION_GROUP_INTERNAL, 0, "tokenLoadLimit",
-                                        "Don't load whole stream, instead only load "
-                                        "this many tokens.");
-
   TypedOption<bool> optionAubSignaturesCL(
       options, OPTION_GROUP_INTERNAL, 0, "aubSignaturesCL",
       "Append signatures at the end of each mem object. "
@@ -999,15 +971,6 @@ bool configure_player(int argc, char** argv) {
                                    "Do not initialize OpenCL subsystem. This will cause GITS to "
                                    "crash in case OpenCL is actually used by the stream.",
                                    GITS_PLATFORM_BIT_WINDOWS | GITS_PLATFORM_BIT_X11);
-
-  TypedOption<bool> optionUseZoneAllocator(options, OPTION_GROUP_INTERNAL, 0, "useZoneAlloc",
-                                           "Use zone allocator which stores tokens together "
-                                           "in 4MB blocks of memory.");
-
-  TypedOption<bool> optionShowOriginalFormat(
-      options, OPTION_GROUP_INTERNAL, 0, "showOriginalFormat",
-      "Before createing an EGL window, prints all attributes it "
-      "was created with.");
 
   TypedOption<std::filesystem::path> optionLibEGL(options, OPTION_GROUP_INTERNAL, 0, "libEGLPath",
                                                   "Override for library containing EGL functions",
@@ -1110,7 +1073,6 @@ bool configure_player(int argc, char** argv) {
   set_when_option_present(cfg.common.player.version, optionVersion);
   set_when_option_present(cfg.common.player.interactive, optionInteractive);
   set_when_option_present(cfg.common.player.stats, optionStats);
-  set_when_option_present(cfg.common.player.statsVerb, optionStatsVerb);
   set_when_option_present(cfg.common.player.disableExceptionHandling, optionNoExceptionHandling);
   set_when_option_present(cfg.common.player.escalatePriority, optionEscalatePriority);
   set_when_option_present(cfg.common.player.swapAfterPrepare, optionSwapAfterPrepare);
@@ -1119,7 +1081,6 @@ bool configure_player(int argc, char** argv) {
   set_when_option_present(cfg.opengl.player.linkGetProgBinary, optionLinkGetProgBinary);
   set_when_option_present(cfg.opengl.player.linkUseProgBinary, optionLinkUseProgBinary);
   set_when_option_present(cfg.common.player.diags, optionRecorderDiags);
-  set_when_option_present(cfg.opengl.player.showOriginalPixelFormat, optionShowOriginalFormat);
   set_when_option_present(cfg.opengl.player.forceNoMSAA, optionForceNoMSAA);
   set_when_option_present(cfg.common.player.cleanResourcesOnExit, optionCleanResourcesOnExit);
   set_when_option_present(cfg.opengl.player.destroyContextsOnExit, optionDestroyContextsOnExit);
@@ -1146,9 +1107,6 @@ bool configure_player(int argc, char** argv) {
     std::filesystem::path pipelineCachePath = optionOverrideVKPipelineCache.Value();
     cfg.vulkan.player.overrideVKPipelineCache = std::filesystem::absolute(pipelineCachePath);
   }
-
-  set_when_option_present(cfg.opengl.player.forcePortableWglDepthBits,
-                          optionForcePortableWglDepthBits);
 
   set_when_option_present(cfg.opencl.player.noOpenCL, optionNoOpenCL);
   cfg.common.player.applicationPath = options.AppPath();
@@ -1190,9 +1148,7 @@ bool configure_player(int argc, char** argv) {
   }
 
   set_when_option_present(cfg.opengl.player.captureDrawsPre, optionCaptureDrawsPre);
-  set_when_option_present(cfg.common.player.syncWithRecorder, optionSyncWithRecorder);
   set_when_option_present(cfg.common.player.benchmark, optionBenchmark);
-  set_when_option_present(cfg.common.player.useZoneAllocator, optionUseZoneAllocator);
   set_when_option_present(cfg.common.player.nullRun, optionNullRun);
 
   if (optionTrace.Present()) {
@@ -1369,7 +1325,6 @@ bool configure_player(int argc, char** argv) {
     Log(WARN) << "The '--checkCrossPlatformCompatibility' argument is deprecated.";
   }
   set_when_option_present(cfg.opengl.player.scaleFactor, optionScaleFactor);
-  set_when_option_present(cfg.common.player.tokenLoadLimit, optionTokenLoadLimit);
   set_when_option_present(cfg.vulkan.player.maxAllowedVkSwapchainRewinds,
                           optionMaxAllowedVkSwapchainRewinds);
   set_when_option_present(cfg.common.player.endFrameSleep, optionEndFrameSleep);
@@ -1456,7 +1411,6 @@ bool configure_player(int argc, char** argv) {
   set_when_option_present(cfg.opengl.player.captureFlushFrame, optionCaptureFlushFrame);
   set_when_option_present(cfg.opengl.player.captureBindFboFrame, optionCaptureBindFboFrame);
   set_when_option_present(cfg.opengl.player.keepDraws, optionKeepDraws);
-  set_when_option_present(cfg.common.player.keepApis, optionKeepApis);
   set_when_option_present(cfg.opengl.player.keepFrames, optionKeepFrames);
   set_when_option_present(cfg.opengl.player.minimalConfig, optionMinimalConfig);
 
@@ -1614,6 +1568,12 @@ bool configure_player(int argc, char** argv) {
     cfg.common.player.streamDir = stream_path.parent_path();
   }
   Config::Set(cfg);
+
+  if (argc > 1 && cfg.common.player.helpGroup == "") {
+    Log(INFO)
+        << "Options defined in the command line; Please note that any options set via the command "
+           "line will take precedence over those specified in the configuration file.";
+  }
 
   if (cfg.common.player.helpGroup != "") {
     // show usage screen

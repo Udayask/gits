@@ -47,7 +47,8 @@ void* get_proc_address(const char* name);
 namespace gits {
 namespace OpenCL {
 IRecorderWrapper* CGitsPluginOpenCL::_recorderWrapper;
-std::unique_ptr<CGitsLoader> CGitsPluginOpenCL::_loader;
+std::unique_ptr<CGitsLoader, CustomLoaderCleanup> CGitsPluginOpenCL::_loader(nullptr,
+                                                                             CustomLoaderCleanup());
 std::mutex CGitsPluginOpenCL::_mutex;
 
 namespace {
@@ -105,16 +106,13 @@ void CGitsPluginOpenCL::Initialize() {
 }
 
 void CGitsPluginOpenCL::ProcessTerminationDetected() {
-  static_cast<CGitsLoader*>(_loader.get())->ProcessTerminationDetected();
+  _recorderWrapper->MarkRecorderForDeletion();
+  _recorderWrapper->CloseRecorderIfRequired();
 }
 
 const Config& CGitsPluginOpenCL::Configuration() {
-  return static_cast<CGitsLoader*>(_loader.get())->GetConfiguration();
-}
-
-CGitsPluginOpenCL::~CGitsPluginOpenCL() {
-  _recorderWrapper->MarkRecorderForDeletion();
-  _recorderWrapper->CloseRecorderIfRequired();
+  std::unique_lock<std::mutex> lock(_mutex);
+  return _loader->GetConfiguration();
 }
 
 } // namespace OpenCL

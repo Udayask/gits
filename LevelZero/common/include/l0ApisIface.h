@@ -85,6 +85,43 @@ public:
     const auto isComputeAllocation = allocInfo.first != nullptr;
     return isComputeAllocation;
   }
+  virtual bool VerifyAllocationShared(void* address) const {
+    auto& sd = SD();
+    const auto allocInfo = GetAllocFromRegion(address, sd);
+    const auto isComputeAllocation = allocInfo.first != nullptr;
+    if (isComputeAllocation) {
+      return sd.Get<CAllocState>(allocInfo.first, EXCEPTION_MESSAGE).memType ==
+             UnifiedMemoryType::shared;
+    }
+    return isComputeAllocation;
+  }
+
+  virtual void UpdateConditionMemoryProtection() const {
+    auto& sd = SD();
+    sd.gst.SyncCheck();
+    for (auto& allocState : sd.Map<CAllocState>()) {
+      allocState.second->beingExecuted = false;
+    }
+    for (const auto& queueSubmissionInfo : sd.gst.queueSubmissionTracker) {
+      const auto& context =
+          sd.Get<CCommandListState>(queueSubmissionInfo.second->hCommandList, EXCEPTION_MESSAGE)
+              .hContext;
+      for (auto& allocState : sd.Map<CAllocState>()) {
+        if (CheckKernelResidencyPossibilities(
+                *allocState.second, queueSubmissionInfo.second->executionInfo->indirectUsmTypes,
+                context)) {
+          allocState.second->beingExecuted = true;
+        }
+      }
+      for (const auto& arg : queueSubmissionInfo.second->executionInfo->GetArguments()) {
+        if (arg.second.type == KernelArgType::buffer) {
+          const auto allocInfo = GetAllocFromRegion(const_cast<void*>(arg.second.argValue), sd);
+          sd.Get<CAllocState>(allocInfo.first, EXCEPTION_MESSAGE).beingExecuted = true;
+        }
+      }
+    }
+  }
+
   virtual ~Api() = default; // Fixes the -Wdelete-non-virtual-dtor warning.
 };
 } // namespace l0

@@ -78,33 +78,120 @@ std::set<uint64_t> CSwapchainKHRState::GetMappedPointers() {
 
 InternalPipelinesManager::InternalPipelines::InternalPipelines(VkDevice _device)
     : device(_device),
-      layout(VK_NULL_HANDLE),
-      prepareDeviceAddressesForPatching(VK_NULL_HANDLE),
-      patchDeviceAddressesPipeline(VK_NULL_HANDLE) {
-  layout = createInternalPipelineLayout(device);
+      descriptorSetLayoutState(),
+      pipelineLayout(VK_NULL_HANDLE),
+      prepareDeviceAddressesForPatchingPipeline(VK_NULL_HANDLE),
+      patchDeviceAddressesPipeline(VK_NULL_HANDLE),
+      prepareIndirectCopyFor16BitIndexedVerticesPipeline(VK_NULL_HANDLE),
+      prepareIndirectCopyFor32BitIndexedVerticesPipeline(VK_NULL_HANDLE),
+      performIndirectCopyPipeline(VK_NULL_HANDLE) {}
+
+InternalPipelinesManager::InternalPipelines::~InternalPipelines() {
+  drvVk.vkDestroyPipeline(device, prepareDeviceAddressesForPatchingPipeline, nullptr);
+  drvVk.vkDestroyPipeline(device, patchDeviceAddressesPipeline, nullptr);
+  drvVk.vkDestroyPipeline(device, prepareIndirectCopyFor16BitIndexedVerticesPipeline, nullptr);
+  drvVk.vkDestroyPipeline(device, prepareIndirectCopyFor32BitIndexedVerticesPipeline, nullptr);
+  drvVk.vkDestroyPipeline(device, performIndirectCopyPipeline, nullptr);
+
+  drvVk.vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+  if (descriptorSetLayoutState) {
+    drvVk.vkDestroyDescriptorSetLayout(device, descriptorSetLayoutState->descriptorSetLayoutHandle,
+                                       nullptr);
+  }
+}
+
+InternalPipelinesManager::InternalPipelines::InternalPipelines(const InternalPipelines& other)
+    : device(other.device),
+      descriptorSetLayoutState(other.descriptorSetLayoutState),
+      pipelineLayout(other.pipelineLayout),
+      prepareDeviceAddressesForPatchingPipeline(other.prepareDeviceAddressesForPatchingPipeline),
+      patchDeviceAddressesPipeline(other.patchDeviceAddressesPipeline),
+      prepareIndirectCopyFor16BitIndexedVerticesPipeline(
+          other.prepareIndirectCopyFor16BitIndexedVerticesPipeline),
+      prepareIndirectCopyFor32BitIndexedVerticesPipeline(
+          other.prepareIndirectCopyFor32BitIndexedVerticesPipeline),
+      performIndirectCopyPipeline(other.performIndirectCopyPipeline) {}
+
+InternalPipelinesManager::InternalPipelines& InternalPipelinesManager::InternalPipelines::operator=(
+    const InternalPipelines& other) {
+  if (this == &other) {
+    return *this;
+  }
+  device = other.device;
+  descriptorSetLayoutState = other.descriptorSetLayoutState;
+  pipelineLayout = other.pipelineLayout;
+  prepareDeviceAddressesForPatchingPipeline = other.prepareDeviceAddressesForPatchingPipeline;
+  patchDeviceAddressesPipeline = other.patchDeviceAddressesPipeline;
+  prepareIndirectCopyFor16BitIndexedVerticesPipeline =
+      other.prepareIndirectCopyFor16BitIndexedVerticesPipeline;
+  prepareIndirectCopyFor32BitIndexedVerticesPipeline =
+      other.prepareIndirectCopyFor32BitIndexedVerticesPipeline;
+  performIndirectCopyPipeline = other.performIndirectCopyPipeline;
+  return *this;
+}
+
+std::shared_ptr<CDescriptorSetLayoutState> InternalPipelinesManager::InternalPipelines::
+    getDescriptorSetLayoutState() {
+  if (!descriptorSetLayoutState) {
+    descriptorSetLayoutState = createInternalDescriptorSetLayout(device);
+  }
+  return descriptorSetLayoutState;
 }
 
 VkPipelineLayout InternalPipelinesManager::InternalPipelines::getLayout() {
-  return layout;
+  if (pipelineLayout == VK_NULL_HANDLE) {
+    auto descriptorSetLayout = getDescriptorSetLayoutState()->descriptorSetLayoutHandle;
+    pipelineLayout = createInternalPipelineLayout(device, 1, &descriptorSetLayout);
+  }
+  return pipelineLayout;
 }
 
 VkPipeline InternalPipelinesManager::InternalPipelines::
     getPrepareDeviceAddressesForPatchingPipeline() {
-  if (prepareDeviceAddressesForPatching == VK_NULL_HANDLE) {
-    prepareDeviceAddressesForPatching = createInternalPipeline(
-        device, layout, getPrepareDeviceAddressesForPatchingShaderModuleSource());
+  if (prepareDeviceAddressesForPatchingPipeline == VK_NULL_HANDLE) {
+    prepareDeviceAddressesForPatchingPipeline = createInternalPipeline(
+        device, pipelineLayout, getPrepareDeviceAddressesForPatchingShaderModuleSource());
   }
 
-  return prepareDeviceAddressesForPatching;
+  return prepareDeviceAddressesForPatchingPipeline;
 }
 
 VkPipeline InternalPipelinesManager::InternalPipelines::getPatchDeviceAddressesPipeline() {
   if (patchDeviceAddressesPipeline == VK_NULL_HANDLE) {
     patchDeviceAddressesPipeline =
-        createInternalPipeline(device, layout, getPatchDeviceAddressesShaderModuleSource());
+        createInternalPipeline(device, pipelineLayout, getPatchDeviceAddressesShaderModuleSource());
   }
 
   return patchDeviceAddressesPipeline;
+}
+
+VkPipeline InternalPipelinesManager::InternalPipelines::
+    getPrepareIndirectCopyFor16BitIndexedVerticesPipeline() {
+  if (prepareIndirectCopyFor16BitIndexedVerticesPipeline == VK_NULL_HANDLE) {
+    prepareIndirectCopyFor16BitIndexedVerticesPipeline = createInternalPipeline(
+        device, pipelineLayout, getPrepareIndirectCopyFor16BitIndexedVerticesShaderModuleSource());
+  }
+
+  return prepareIndirectCopyFor16BitIndexedVerticesPipeline;
+}
+
+VkPipeline InternalPipelinesManager::InternalPipelines::
+    getPrepareIndirectCopyFor32BitIndexedVerticesPipeline() {
+  if (prepareIndirectCopyFor32BitIndexedVerticesPipeline == VK_NULL_HANDLE) {
+    prepareIndirectCopyFor32BitIndexedVerticesPipeline = createInternalPipeline(
+        device, pipelineLayout, getPrepareIndirectCopyFor32BitIndexedVerticesShaderModuleSource());
+  }
+
+  return prepareIndirectCopyFor32BitIndexedVerticesPipeline;
+}
+
+VkPipeline InternalPipelinesManager::InternalPipelines::getPerformIndirectCopyPipeline() {
+  if (performIndirectCopyPipeline == VK_NULL_HANDLE) {
+    performIndirectCopyPipeline =
+        createInternalPipeline(device, pipelineLayout, getPerformIndirectCopyShaderModuleSource());
+  }
+
+  return performIndirectCopyPipeline;
 }
 
 } // namespace Vulkan

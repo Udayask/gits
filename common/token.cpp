@@ -28,7 +28,6 @@
 #include "streams.h"
 #include "gits.h"
 #include "config.h"
-#include "zone_allocator.h"
 #include "function.h"
 #include "scheduler.h"
 #include "tools.h"
@@ -48,30 +47,12 @@ namespace gits {
 
 CToken::~CToken() {}
 
-static zone_allocator token_allocator;
-void zone_allocator_next_zone() {
-  if (Config::Get().common.player.useZoneAllocator) {
-    token_allocator.use_next_zone();
-  }
-}
-void zone_allocator_reinitialize(size_t zones, size_t size) {
-  if (Config::Get().common.player.useZoneAllocator) {
-    token_allocator.reinitialize(zones, size);
-  }
-}
-
 void* CToken::operator new(size_t size) {
-  if (Config::Get().common.player.useZoneAllocator) {
-    return token_allocator.allocate(size);
-  } else {
-    return ::operator new(size);
-  }
+  return ::operator new(size);
 }
 
 void CToken::operator delete(void* pointer) {
-  if (!Config::Get().common.player.useZoneAllocator) {
-    ::operator delete(pointer);
-  }
+  ::operator delete(pointer);
 }
 
 void CToken::Serialize(CBinOStream& stream) {
@@ -288,6 +269,10 @@ void CTokenFrameNumber::Run() {
   }
 }
 
+uint64_t CTokenFrameNumber::Size() const {
+  return sizeof(_id) + sizeof(_frameNumber);
+}
+
 /* ******************************** PLAYER RECORDER SYNC ****************************** */
 
 CTokenPlayerRecorderSync::CTokenPlayerRecorderSync() {
@@ -306,17 +291,7 @@ void CTokenPlayerRecorderSync::Read(CBinIStream& stream) {
   read_from_stream(stream, _timeStamp);
 }
 
-void CTokenPlayerRecorderSync::Run() {
-  if (!Config::Get().common.player.syncWithRecorder) {
-    return;
-  }
-
-  static uint64_t base = CGits::Instance().Timers().program.Get() / 1000;
-  for (uint64_t current = CGits::Instance().Timers().program.Get() / 1000;
-       current - base < _timeStamp; current = CGits::Instance().Timers().program.Get() / 1000) {
-    std::this_thread::sleep_for(std::chrono::microseconds(_timeStamp - (current - base)));
-  }
-}
+void CTokenPlayerRecorderSync::Run() {}
 
 /* ******************************** TOKEN MAKE CURRENT THREAD ****************************** */
 

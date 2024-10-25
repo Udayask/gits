@@ -34,30 +34,24 @@ std::map<const char*, uint64_t> token_size;
 
 namespace gits {
 
-void zone_allocator_next_zone();
-void zone_allocator_reinitialize(size_t zones, size_t size);
-
 class CStreamLoader {
   CScheduler& _sched;
-  unsigned _ignore_mask;
-  CStreamLoader operator=(const CStreamLoader&) = delete;
 
 public:
-  CStreamLoader(CScheduler& sched, unsigned ignore_mask = 0)
-      : _sched(sched), _ignore_mask(ignore_mask) {}
+  // User-defined copy assignment operator.
+  CStreamLoader& operator=(const CStreamLoader&) = delete;
+
+  // User-defined copy constructor.
+  CStreamLoader(const CStreamLoader& other) : _sched(other._sched) {}
+
+  // User-defined destructor.
+  ~CStreamLoader() = default;
+  CStreamLoader(CScheduler& sched) : _sched(sched) {}
 
   void operator()(ProducerConsumer<CScheduler::CTokenList>& queue) {
     CScheduler::CTokenList tokenList;
-    // These values are guessed, and should probably be configurable.
-    // The aim is to always have token burst fitting inside one zone.
-    // Bounded number of token burst alive at any one time is needed too.
-    // The value is also guessed as it can vary depending on how various
-    // stages retire them.
-    zone_allocator_reinitialize(Config::Get().common.player.tokenBurstNum + 2,
-                                Config::Get().common.player.tokenBurst * 64);
 
     try {
-      unsigned totalLoaded = 0;
       unsigned sinceLastChk = 0;
 
       // Token creating function.
@@ -72,22 +66,22 @@ public:
       const auto stream = _sched._iBinStream;
       const auto tokenBurstLimit = _sched._tokenLimit;
       const auto checkpointSize = _sched._checkpointSize;
-      const auto tokenLoadLimit = Config::Get().common.player.tokenLoadLimit;
 
+      unsigned currentLoadedFrame = 0;
+      bool stopLoading = false;
       for (;;) {
         unsigned loaded = 0;
-        bool everything_loaded = false;
         uint64_t maxLoaded = std::min((uint64_t)std::numeric_limits<decltype(loaded)>::max(),
                                       (uint64_t)tokenList.max_size());
         while ((loaded < tokenBurstLimit ||
                 Config::Get().common.player.loadWholeStreamBeforePlayback) &&
-               !everything_loaded) {
+               !stopLoading) {
 #ifdef GITS_DEBUG_TOKEN_SIZE
           uint64_t tokBegin = stream->tellg();
 #endif
           CToken* token = CToken::Deserialize(*stream, tokenCtor);
           if (token == nullptr) {
-            everything_loaded = true;
+            stopLoading = true;
             break;
           }
 
@@ -95,12 +89,6 @@ public:
           uint64_t tokEnd = stream->tellg();
           token_size[typeid(*token).name()] += tokEnd - tokBegin + 2;
 #endif
-          // this token is to be ignored, remove it and carry on with rest
-          auto type = token->Type();
-          if ((type & _ignore_mask) != 0) {
-            delete token;
-            continue;
-          }
           if (loaded >= maxLoaded) {
             Log(ERR) << "Max token loaded limit in one burst exceeded.";
             throw std::runtime_error(EXCEPTION_MESSAGE);
@@ -109,7 +97,6 @@ public:
           tokenList.push_back(token);
 
           loaded++;
-          totalLoaded++;
           sinceLastChk++;
 
           if (sinceLastChk == checkpointSize) {
@@ -117,18 +104,21 @@ public:
             sinceLastChk = 0;
           }
 
-          if (tokenLoadLimit == totalLoaded) {
-            everything_loaded = true;
+          // Stop loading tokens past 'exitFrame'
+          if (token->Id() == CToken::ID_FRAME_END) {
+            currentLoadedFrame++;
+            if (currentLoadedFrame > gits::Config::Get().common.player.exitFrame) {
+              stopLoading = true;
+            }
           }
         }
-        zone_allocator_next_zone();
 
         // Finish if the queue won't accept more products.
         if (!queue.produce(tokenList)) {
           break;
         }
 
-        if (everything_loaded) {
+        if (stopLoading) {
           queue.break_pipe();
           break;
         }
@@ -150,9 +140,14 @@ public:
 
 class CStreamWriter {
   CScheduler& _sched;
-  CStreamWriter& operator=(const CStreamWriter&) = delete;
 
 public:
+  // User-defined copy assignment operator.
+  CStreamWriter& operator=(const CStreamWriter&) = delete;
+  // User-defined destructor.
+  ~CStreamWriter() = default;
+  // User-defined copy constructor.
+  CStreamWriter(const CStreamWriter& other) : _sched(other._sched) {}
   CStreamWriter(CScheduler& sched) : _sched(sched) {}
 
   static void consume_tokens(CScheduler::CTokenList& tokenList,
@@ -255,10 +250,8 @@ CScheduler::~CScheduler() {
  * @param function Function call wrapper to register.
  */
 void CScheduler::Register(CToken* token) {
-  if (Config::Get().common.mode == Config::MODE_RECORDER) {
-    if (_tokenList.size() > _tokenLimit) {
-      WriteChunk();
-    }
+  if (_tokenList.size() > _tokenLimit) {
+    WriteChunk();
   }
 
   // This mutex is necessary, because each recorded api (GL/CL/rs)

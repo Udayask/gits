@@ -88,6 +88,10 @@ void CRecorderWrapper::MarkRecorderForDeletion() {
   }
 }
 
+std::recursive_mutex& CRecorderWrapper::GetInterceptorMutex() const {
+  return _recorder.GetMutex();
+}
+
 CDriver& CRecorderWrapper::Drivers() const {
   return drv;
 }
@@ -142,7 +146,7 @@ void CRecorderWrapper::oclocInvoke(int return_value,
     for (auto i = 0U; i < numSources; i++) {
       const auto src = std::string(sources[i], sources[i] + sourceLens[i] - 1);
       const auto headerFiles =
-          GetStringsWithRegex(src, R"(#include\s*["<]([^">]+))", "#include\\s*[<\"]*");
+          GetStringsWithRegex(std::move(src), R"(#include\s*["<]([^">]+))", "#include\\s*[<\"]*");
       if (!headerFiles.empty()) {
         CreateHeaderFiles(headerFiles, includePaths, alreadyCreatedHeaders, true);
       }

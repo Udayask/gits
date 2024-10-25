@@ -24,6 +24,8 @@
 #include "tools_lite.h"
 #include "pragmas.h"
 #include "apis_iface.h"
+#include "messageBus.h"
+
 #include <atomic>
 #include <functional>
 #include <memory>
@@ -43,6 +45,7 @@
 #define GITS_VULKAN_RETURN_VALUE_FIX  GITS_MAKE_VERSION3(2, 0, 6)
 #define GITS_OPENCL_SET_USM_ARG       GITS_MAKE_VERSION4(2, 0, 8, 23)
 #define GITS_TOKEN_COMPRESSION        GITS_MAKE_VERSION3(2, 0, 10)
+#define GITS_API_INFO                 GITS_MAKE_VERSION3(2, 0, 11)
 
 struct lua_State;
 
@@ -76,6 +79,7 @@ public:
 
   nlohmann::ordered_json& GetProperties() const;
   std::string ReadProperties() const;
+  std::string GetApplicationName() const;
 
   friend CBinOStream& operator<<(CBinOStream& stream, const CFile& file);
   friend CBinIStream& operator>>(CBinIStream& stream, CFile& file);
@@ -123,6 +127,10 @@ struct TimerSet {
   std::vector<std::unique_ptr<Timer>> stateRestoreTimers;
 };
 
+enum class SchedulerVersion {
+  VERSION_1_0, // Initial version
+};
+
 /**
    * @brief Main GITS project class
    *
@@ -146,6 +154,8 @@ private:
   std::unique_ptr<CFile> _fileRecorder;           /**< @brief GITS file connected data */
   std::unique_ptr<CFile> _filePlayer;             /**< @brief GITS file connected data */
   std::unique_ptr<StreamCompressor> _compressor;
+  ApisIface::TApi _api3D;
+  ApisIface::TApi _apiCompute;
   CRunner _runner;
   FrameTimeSheet _timeSheet;
   int _currentThreadId;
@@ -180,6 +190,8 @@ private:
   uint64_t _maxLocalMemoryUsage;
 
   std::unordered_map<void*, uint64_t> _ptrToOrderedId;
+
+  MessageBus _messageBus;
 
   CGits();
   CGits(uint16_t v0, uint16_t v1, uint16_t v2, uint16_t v3);
@@ -322,6 +334,22 @@ public:
     return _ccodeStateRestore;
   }
 
+  void SetApi3D(ApisIface::TApi newApi) {
+    _api3D = newApi;
+  }
+
+  ApisIface::TApi GetApi3D() const {
+    return _api3D;
+  }
+
+  void SetApiCompute(ApisIface::TApi newApi) {
+    _apiCompute = newApi;
+  }
+
+  ApisIface::TApi GetApiCompute() const {
+    return _apiCompute;
+  }
+
   void AddLocalMemoryUsage(const size_t& size);
   void SubtractLocalMemoryUsage(const size_t& size);
   size_t GetMaxLocalMemoryUsage() const;
@@ -424,6 +452,11 @@ public:
   }
   bool traceGLAPIBypass;
   ApisIface apis;
+  SchedulerVersion schedulerVersion;
+
+  MessageBus& GetMessageBus() {
+    return _messageBus;
+  }
 
   friend std::ostream& operator<<(std::ostream& stream, const CGits& g);
   friend CBinOStream& operator<<(CBinOStream& stream, const CGits& g);

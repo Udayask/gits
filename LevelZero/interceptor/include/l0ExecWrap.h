@@ -17,10 +17,9 @@
 #include <mutex>
 
 namespace {
-std::recursive_mutex globalMutex;
 // Avoid recording API - recursive functions.
 uint32_t recursionDepth = 0;
-const uint32_t disableDepth = 1000;
+constexpr uint32_t disableDepth = 1000;
 } // namespace
 
 using namespace gits::l0;
@@ -44,14 +43,14 @@ void PrePostDisableLevelZero() {
   }
 
 #define GITS_ENTRY                                                                                 \
-  ++recursionDepth;                                                                                \
   CGitsPlugin::Initialize();                                                                       \
   IRecorderWrapper& wrapper = CGitsPlugin::RecorderWrapper();                                      \
+  std::unique_lock<std::recursive_mutex> lock(wrapper.GetInterceptorMutex());                      \
+  ++recursionDepth;                                                                                \
   CDriver& driver = wrapper.Drivers();                                                             \
   wrapper.InitializeDriver();
 
-#define GITS_MUTEX    std::unique_lock<std::recursive_mutex> lock(globalMutex);
-#define GITS_ENTRY_L0 GITS_MUTEX GITS_ENTRY
+#define GITS_ENTRY_L0 GITS_ENTRY
 
 #ifdef GITS_PLATFORM_WINDOWS
 #define VISIBLE __declspec(dllexport)
@@ -384,6 +383,38 @@ inline ze_result_t zeContextDestroy_RECEXECWRAP(ze_context_handle_t hContext) {
   GITS_WRAPPER_POST
   else {
     return_value = driver.zeContextDestroy(hContext);
+  }
+  return return_value;
+}
+inline ze_result_t zelSetDriverTeardown_RECEXECWRAP() {
+  return ZE_RESULT_SUCCESS;
+}
+inline ze_result_t zeCommandListImmediateAppendCommandListsExp_RECEXECWRAP(
+    ze_command_list_handle_t hCommandListImmediate,
+    uint32_t numCommandLists,
+    ze_command_list_handle_t* phCommandLists,
+    ze_event_handle_t hSignalEvent,
+    uint32_t numWaitEvents,
+    ze_event_handle_t* phWaitEvents) {
+  GITS_ENTRY_L0
+  auto return_value = ZE_RESULT_SUCCESS;
+  GITS_WRAPPER_PRE
+  wrapper.UnProtectMemoryPointers();
+  wrapper.zeCommandListImmediateAppendCommandListsExp_pre(
+      return_value, hCommandListImmediate, numCommandLists, phCommandLists, hSignalEvent,
+      numWaitEvents, phWaitEvents);
+  return_value = driver.zeCommandListImmediateAppendCommandListsExp(
+      hCommandListImmediate, numCommandLists, phCommandLists, hSignalEvent, numWaitEvents,
+      phWaitEvents);
+  wrapper.zeCommandListImmediateAppendCommandListsExp(return_value, hCommandListImmediate,
+                                                      numCommandLists, phCommandLists, hSignalEvent,
+                                                      numWaitEvents, phWaitEvents);
+  wrapper.ProtectMemoryPointers();
+  GITS_WRAPPER_POST
+  else {
+    return_value = driver.zeCommandListImmediateAppendCommandListsExp(
+        hCommandListImmediate, numCommandLists, phCommandLists, hSignalEvent, numWaitEvents,
+        phWaitEvents);
   }
   return return_value;
 }

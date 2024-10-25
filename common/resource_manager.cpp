@@ -89,6 +89,13 @@ CResourceManager::CResourceManager(
   }
 }
 
+CResourceManager::~CResourceManager() {
+  for (auto& pair : _fileReader) {
+    delete pair.second; // Delete each CBinIStream pointer
+  }
+  _fileReader.clear(); // Clear the map
+}
+
 std::vector<char> CResourceManager::get(hash_t hash) {
   if (hash == EmptyHash) {
     return std::vector<char>();
@@ -217,7 +224,8 @@ hash_t CResourceManager2::put(
   index_[hash] = resource;
 
   if (Config::Get().common.recorder.highIntegrity) {
-    write_map(index_filename_, index_);
+    append_map(index_filename_, hash, resource);
+    dirty_ = false;
   }
 
   return hash;

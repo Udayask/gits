@@ -22,12 +22,16 @@ namespace gits {
 class ApisIface {
 public:
   enum TApi {
+    ApiNotSet,
     OpenGL,
     Vulkan,
     OpenCL,
     LevelZero,
   };
-  enum TApiType { A3D, ACompute };
+  enum TApiType {
+    A3D,
+    ACompute
+  };
 
   class ApiIface {
     TApi _api;
@@ -195,6 +199,12 @@ public:
     };
     virtual bool VerifyAllocation([[maybe_unused]] void* address) const {
       return false;
+    }
+    virtual bool VerifyAllocationShared([[maybe_unused]] void* address) const {
+      return false;
+    }
+    virtual void UpdateConditionMemoryProtection() const {
+      return;
     }
     virtual void MemorySnifferProtect(PagedMemoryRegionHandle& handle) const;
     virtual void MemorySnifferUnProtect(PagedMemoryRegionHandle& handle) const;

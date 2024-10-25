@@ -24,14 +24,6 @@
 #include "l0ArgumentsAuto.h"
 #include "l0Tools.h"
 
-#ifdef WITH_OPENCL
-#include "openclArguments.h"
-#else
-#define Ccl_context       COutArgument
-#define Ccl_mem           COutArgument
-#define Ccl_program       COutArgument
-#define Ccl_command_queue COutArgument
-#endif
 #include "tools_lite.h"
 
 namespace gits {
@@ -293,6 +285,24 @@ inline void zeModuleCreate_RUNWRAP(Cze_result_t& _return_value,
       drv.zeModuleCreate(*_hContext, *_hDevice, *_desc, *_phModule, *_phBuildLog);
   zeModuleCreate_SD(*_return_value, *_hContext, *_hDevice, *_desc, *_phModule, *_phBuildLog);
   HandleDumpSpv(*_desc);
+  const auto buildLogHandle = *_phBuildLog != nullptr ? **_phBuildLog : nullptr;
+  if (_return_value.Value() == ZE_RESULT_ERROR_MODULE_BUILD_FAILURE && buildLogHandle != nullptr) {
+    size_t size = 0U;
+    drv.inject.zeModuleBuildLogGetString(buildLogHandle, &size, nullptr);
+    if (size > 1U) {
+      std::vector<char> buildLog(size, '\0');
+      const auto retVal =
+          drv.inject.zeModuleBuildLogGetString(buildLogHandle, &size, buildLog.data());
+      if (retVal == ZE_RESULT_SUCCESS) {
+        Log(ERR) << buildLog.data();
+      }
+    } else {
+      Log(ERR) << "Build log is empty.";
+    }
+  }
+  if (buildLogHandle != nullptr) {
+    drv.inject.zeModuleBuildLogDestroy(buildLogHandle);
+  }
 }
 
 inline void zeModuleCreate_V1_RUNWRAP(Cze_result_t& _return_value,
@@ -310,8 +320,26 @@ inline void zeModuleCreate_V1_RUNWRAP(Cze_result_t& _return_value,
     ze_module_handle_t* hModule = *_phModule;
     if (hModule != nullptr) {
       auto& moduleState = SD().Get<CModuleState>(*hModule, EXCEPTION_MESSAGE);
-      moduleState.moduleFileName = moduleFileName;
+      moduleState.moduleFileName = std::move(moduleFileName);
     }
+  }
+  const auto buildLogHandle = *_phBuildLog != nullptr ? **_phBuildLog : nullptr;
+  if (_return_value.Value() == ZE_RESULT_ERROR_MODULE_BUILD_FAILURE && buildLogHandle != nullptr) {
+    size_t size = 0U;
+    drv.inject.zeModuleBuildLogGetString(buildLogHandle, &size, nullptr);
+    if (size > 1U) {
+      std::vector<char> buildLog(size, '\0');
+      const auto retVal =
+          drv.inject.zeModuleBuildLogGetString(buildLogHandle, &size, buildLog.data());
+      if (retVal == ZE_RESULT_SUCCESS) {
+        Log(ERR) << buildLog.data();
+      }
+    } else {
+      Log(ERR) << "Build log is empty.";
+    }
+  }
+  if (buildLogHandle != nullptr) {
+    drv.inject.zeModuleBuildLogDestroy(buildLogHandle);
   }
 }
 
@@ -641,6 +669,7 @@ inline void zeMemFree_RUNWRAP(Cze_result_t& _return_value,
       zeMemFree_SD(*_return_value, *_hContext, *_ptr);
     }
   }
+  _ptr.RemoveMapping();
 }
 
 inline void zeVirtualMemReserve_V1_RUNWRAP(Cze_result_t& _return_value,
@@ -665,6 +694,25 @@ inline void zeVirtualMemReserve_V1_RUNWRAP(Cze_result_t& _return_value,
     }
   }
   zeVirtualMemReserve_SD(*_return_value, *_hContext, *_pStart, *_size, *_pptr);
+}
+
+inline void zeCommandListImmediateAppendCommandListsExp_RUNWRAP(
+    Cze_result_t& _return_value,
+    Cze_command_list_handle_t& _hCommandListImmediate,
+    Cuint32_t& _numCommandLists,
+    Cze_command_list_handle_t::CSArray& _phCommandLists,
+    Cze_event_handle_t& _hSignalEvent,
+    Cuint32_t& _numWaitEvents,
+    Cze_event_handle_t::CSArray& _phWaitEvents) {
+  auto& sd = SD();
+  TranslatePointers(sd);
+  _return_value.Value() = drv.zeCommandListImmediateAppendCommandListsExp(
+      *_hCommandListImmediate, *_numCommandLists, *_phCommandLists, *_hSignalEvent, *_numWaitEvents,
+      *_phWaitEvents);
+  gits::CGits::Instance().CommandQueueExecCountUp();
+  zeCommandListImmediateAppendCommandListsExp_SD(*_return_value, *_hCommandListImmediate,
+                                                 *_numCommandLists, *_phCommandLists,
+                                                 *_hSignalEvent, *_numWaitEvents, *_phWaitEvents);
 }
 
 } // namespace l0

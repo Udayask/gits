@@ -130,6 +130,13 @@ int MainBody(int argc, char* argv[]) {
   CGits& inst = CGits::Instance();
   Log(INFO, NO_PREFIX) << inst << "\n";
 
+  inst.GetMessageBus().subscribe({PUBLISHER_PLUGIN, TOPIC_LOG}, [](Topic t, const MessagePtr& m) {
+    auto msg = std::dynamic_pointer_cast<LogMessage>(m);
+    if (msg) {
+      CLog(msg->getLevel(), NORMAL) << msg->getText();
+    }
+  });
+
   if (!cfg.common.player.outputTracePath.empty()) {
     CLog::LogFilePlayer(cfg.common.player.outputTracePath);
   }
@@ -231,7 +238,7 @@ int MainBody(int argc, char* argv[]) {
 
     if (cfg.common.player.stats) {
       // print statistics
-      player.StatisticsPrint(cfg.common.player.statsVerb);
+      player.StatisticsPrint();
       return 0;
     }
 

@@ -61,6 +61,14 @@ CDriver& CRecorderWrapper::Drivers() const {
   return drv;
 }
 
+bool CRecorderWrapper::IsAlive() const {
+  return CGits::InstancePtr() != nullptr;
+}
+
+std::recursive_mutex& CRecorderWrapper::GetInterceptorMutex() const {
+  return _recorder.GetMutex();
+}
+
 void CRecorderWrapper::InitializeDriver() const {
   drv.Initialize();
 }
@@ -73,6 +81,19 @@ void CRecorderWrapper::zeCommandQueueExecuteCommandLists_pre(
     ze_fence_handle_t hFence) const {
   zeCommandQueueExecuteCommandLists_RECWRAP_PRE(_recorder, return_value, hCommandQueue,
                                                 numCommandLists, phCommandLists, hFence);
+}
+
+void CRecorderWrapper::zeCommandListImmediateAppendCommandListsExp_pre(
+    ze_result_t return_value,
+    ze_command_list_handle_t hCommandListImmediate,
+    uint32_t numCommandLists,
+    ze_command_list_handle_t* phCommandLists,
+    ze_event_handle_t hSignalEvent,
+    uint32_t numWaitEvents,
+    ze_event_handle_t* phWaitEvents) const {
+  zeCommandListImmediateAppendCommandListsExp_RECWRAP_PRE(
+      _recorder, return_value, hCommandListImmediate, numCommandLists, phCommandLists, hSignalEvent,
+      numWaitEvents, phWaitEvents);
 }
 
 void CRecorderWrapper::zeCommandListAppendLaunchKernel_pre(ze_result_t return_value,
@@ -148,9 +169,10 @@ void CRecorderWrapper::ProtectMemoryPointers(const ze_command_list_handle_t& hCo
     return;
   }
   const auto& l0IFace = gits::CGits::Instance().apis.IfaceCompute();
+  l0IFace.UpdateConditionMemoryProtection();
   for (const auto& allocState : SD().Map<CAllocState>()) {
     auto& handle = allocState.second->sniffedRegionHandle;
-    if (handle != nullptr) {
+    if (!allocState.second->beingExecuted && handle != nullptr) {
       l0IFace.MemorySnifferProtect(handle);
     }
   }
@@ -186,7 +208,7 @@ bool CRecorderWrapper::DeallocateVirtualMemory(void* ptr) const {
       IsMemoryTypeAddressTranslationDisabled(Config::Get(), UnifiedMemoryType::device);
   if (isVirtualMemoryReserved) {
     auto errCode = ZE_RESULT_SUCCESS;
-    const auto memMaps = allocState.memMaps;
+    const auto& memMaps = allocState.memMaps;
     for (const auto& memMap : memMaps) {
       const auto offsetPtr = GetOffsetPointer(ptr, memMap.first);
       const auto physicalMemHandle = memMap.second->hPhysicalMemory;
@@ -226,7 +248,7 @@ void CRecorderWrapper::ProtectMemoryRegion(void* ptr) const {
   const auto allocInfo = GetAllocFromRegion(ptr, sd);
   if (allocInfo.first != nullptr) {
     auto& allocState = sd.Get<CAllocState>(allocInfo.first, EXCEPTION_MESSAGE);
-    if (allocState.sniffedRegionHandle != nullptr) {
+    if (!allocState.beingExecuted && allocState.sniffedRegionHandle != nullptr) {
       const auto& l0IFace = gits::CGits::Instance().apis.IfaceCompute();
       l0IFace.MemorySnifferProtect(allocState.sniffedRegionHandle);
     }
@@ -261,6 +283,32 @@ void CRecorderWrapper::InjectMemoryReservationFree(ze_context_handle_t hContext)
   Drivers().inject.zeVirtualMemFree(hContext, contextState.virtualMemory,
                                     contextState.virtualMemorySize);
   contextState.virtualMemory = nullptr;
+}
+
+void CRecorderWrapper::UpdateConditionMemoryProtection() const {
+  auto& sd = SD();
+  sd.gst.SyncCheck();
+  for (auto& allocState : sd.Map<CAllocState>()) {
+    allocState.second->beingExecuted = false;
+  }
+  for (auto& queueSubmissionInfo : sd.gst.queueSubmissionTracker) {
+    const auto& context =
+        sd.Get<CCommandListState>(queueSubmissionInfo.second->hCommandList, EXCEPTION_MESSAGE)
+            .hContext;
+    for (auto& allocState : sd.Map<CAllocState>()) {
+      if (CheckKernelResidencyPossibilities(
+              *allocState.second, queueSubmissionInfo.second->executionInfo->indirectUsmTypes,
+              context)) {
+        allocState.second->beingExecuted = true;
+      }
+    }
+    for (auto& arg : queueSubmissionInfo.second->executionInfo->GetArguments()) {
+      if (arg.second.type == KernelArgType::buffer) {
+        const auto allocInfo = GetAllocFromRegion(const_cast<void*>(arg.second.argValue), sd);
+        sd.Get<CAllocState>(allocInfo.first, EXCEPTION_MESSAGE).beingExecuted = true;
+      }
+    }
+  }
 }
 
 } // namespace l0

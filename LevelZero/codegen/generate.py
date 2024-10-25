@@ -17,6 +17,7 @@ import mako.template
 import mako.exceptions
 
 import generator_l0
+import generator_callbacks_l0
 
 def _make_id(name):
     id_ = re.sub('([a-z])([A-Z])', r'\g<1>_\g<2>', name)
@@ -90,7 +91,7 @@ def get_ddi_table_functions(func, ddi_helper_functions, api_version: str):
 def process(functions):
     # add implicit properties
     for name, func in functions.items():
-        if func.get('unprotectLogic', False) and func.get('recExecWrap', False):
+        if (func.get('unprotectLogic', False) or func.get('protectLogic', False)) and func.get('recExecWrap', False):
             raise Exception("'unprotectLogic' and 'recExecWrap' are mutually exclusive")
         functions[name]['version'] = func.get('version', 0)
         functions[name]['recExecWrapName'] = (name if not func['version'] else func.get('name')) + '_RECEXECWRAP'
@@ -134,6 +135,18 @@ def process(functions):
                     functions[name][idx]['wrapType'] = functions[name][idx]['type']
                 functions[name]['args'].append(functions[name][idx])
                 del functions[name][idx]
+
+def process_callbacks(callbacks):
+    for name, _ in callbacks.items():
+        if not callbacks[name].get('args'):
+            callbacks[name]['args'] = list()
+            args = len([s for s in callbacks[name].keys() if s.startswith('arg')])
+            for idx in range(1, args):
+                idx = 'arg' + str(idx)
+                if not callbacks[name][idx].get('wrapType'):
+                    callbacks[name][idx]['wrapType'] = callbacks[name][idx]['type']
+                callbacks[name]['args'].append(callbacks[name][idx])
+                del callbacks[name][idx]
 
 def process_enums(enums):
     for name in enums.keys():
@@ -335,6 +348,8 @@ def main():
     arguments = generator_l0.get_arguments()
     process_arguments(arguments)
     constants = generator_l0.get_constants()
+    callbacks = generator_callbacks_l0.get_callbacks()
+    process_callbacks(callbacks)
 
     if sys.argv[1] == 'update':
         dir = os.path.dirname(os.path.dirname(__file__))
@@ -417,6 +432,7 @@ def main():
             enums=enums,
             arguments=arguments,
             constants=constants,
+            callbacks=callbacks,
             used_types=get_used_types(functions, arguments, enums))
         if ret_val != 0:
             sys.exit(ret_val)

@@ -287,6 +287,10 @@ void PrepareArguments(const CKernelExecutionInfo* kernelInfo,
           static_cast<uint64_t>(arg.first));
       argDump->isInputArg = isInputMode;
       argDumpStates.push_back(*argDump);
+    } else {
+      auto argDump = std::make_shared<CKernelArgumentDump>(kernelInfo->kernelNumber,
+                                                           static_cast<uint64_t>(arg.first));
+      argDumpStates.push_back(*argDump);
     }
   }
   const auto keys = GetOrderedAllocStateKeys(sd);
@@ -352,7 +356,9 @@ void DumpReadyArguments(std::vector<CKernelArgumentDump>& readyArgVector,
         }
       }
     }
-    SaveBuffer(path, name, argState.buffer);
+    if (!argState.buffer.empty()) {
+      SaveBuffer(path, name, argState.buffer);
+    }
     if (argState.argType == KernelArgType::image && captureImages) {
       SaveImage(path, argState.buffer.data(), argState.imageDesc, name);
     }
@@ -360,7 +366,7 @@ void DumpReadyArguments(std::vector<CKernelArgumentDump>& readyArgVector,
 }
 
 bool CaptureKernels(const Config& cfg) {
-  auto captureKernels =
+  const auto& captureKernels =
       cfg.IsPlayer() ? cfg.levelzero.player.captureKernels : cfg.levelzero.recorder.captureKernels;
   return !captureKernels.empty();
 }
@@ -689,7 +695,8 @@ void KernelCountUp(CGits& gitsInstance) {
 }
 
 bool IsDumpOnlyLayoutEnabled(const Config& cfg) {
-  return cfg.IsPlayer() && cfg.levelzero.player.dumpLayoutOnly;
+  return Config::IsPlayer() ? cfg.levelzero.player.dumpLayoutOnly
+                            : cfg.levelzero.recorder.dumpLayoutOnly;
 }
 
 void InjectReadsForArguments(std::vector<CKernelArgumentDump>& readyArgVec,
@@ -706,16 +713,17 @@ void InjectReadsForArguments(std::vector<CKernelArgumentDump>& readyArgVec,
       continue;
     }
     argDump.injected = true;
+    ze_result_t reCode = ZE_RESULT_NOT_READY;
     if (argDump.argType == KernelArgType::buffer) {
-      drv.inject.zeCommandListAppendMemoryCopy(
+      reCode = drv.inject.zeCommandListAppendMemoryCopy(
           cmdList, const_cast<char*>(argDump.buffer.data()), argDump.h_buf, argDump.buffer.size(),
           eventHandle, hSignalEvent ? 1 : 0, hSignalEvent ? &hSignalEvent : nullptr);
     } else if (argDump.argType == KernelArgType::image) {
-      drv.inject.zeCommandListAppendImageCopyToMemory(
+      reCode = drv.inject.zeCommandListAppendImageCopyToMemory(
           cmdList, const_cast<char*>(argDump.buffer.data()), argDump.h_img, nullptr, eventHandle,
           hSignalEvent ? 1 : 0, hSignalEvent ? &hSignalEvent : nullptr);
     }
-    if (eventHandle != nullptr) {
+    if (eventHandle != nullptr && reCode == ZE_RESULT_SUCCESS) {
       drv.inject.zeEventHostSynchronize(eventHandle, UINT64_MAX);
       drv.inject.zeEventHostReset(eventHandle);
     }
@@ -726,41 +734,39 @@ void InjectReadsForArguments(std::vector<CKernelArgumentDump>& readyArgVec,
   }
 }
 
-void DumpQueueSubmit(const Config& cfg,
-                     CStateDynamic& sd,
-                     const ze_command_queue_handle_t& hCommandQueue) {
-  const auto& cqState = sd.Get<CCommandQueueState>(hCommandQueue, EXCEPTION_MESSAGE);
-  ze_command_list_handle_t tmpList = nullptr;
-  for (const auto& queueSubmissionState : cqState.queueSubmissionDumpState) {
-    if (!CheckWhetherDumpQueueSubmit(cfg, queueSubmissionState->cmdQueueNumber)) {
+void DumpQueueSubmissions(
+    const Config& cfg,
+    CStateDynamic& sd,
+    const std::vector<std::unique_ptr<QueueSubmissionSnapshot>>& submissions) {
+  for (const auto& submission : submissions) {
+    if (!CheckWhetherDumpQueueSubmit(cfg, submission->cmdQueueNumber)) {
       continue;
     }
     if (CaptureAfterSubmit(cfg)) {
-      for (const auto& kernelInfo : queueSubmissionState->kernelsExecutionInfo) {
-        if (CheckWhetherDumpKernel(kernelInfo->kernelNumber, queueSubmissionState->cmdListNumber)) {
-          if (!tmpList) {
-            tmpList = GetCommandListImmediate(sd, drv, queueSubmissionState->hContext);
+      ze_command_list_handle_t hImmediateCommandList = nullptr;
+      for (const auto& kernelInfo : submission->kernelsExecutionInfo) {
+        if (CheckWhetherDumpKernel(kernelInfo->kernelNumber, submission->cmdListNumber)) {
+          if (!hImmediateCommandList) {
+            hImmediateCommandList = GetCommandListImmediate(sd, drv, submission->hContext);
           }
-          auto& readyArgVec = sd.Map<CKernelArgumentDump>()[tmpList];
+          auto& readyArgVec = sd.Map<CKernelArgumentDump>()[hImmediateCommandList];
           constexpr bool dumpUniqueArguments = true;
           PrepareArguments(kernelInfo.get(), readyArgVec, sd, false, dumpUniqueArguments);
           if (!IsDumpOnlyLayoutEnabled(cfg)) {
-            InjectReadsForArguments(readyArgVec, tmpList, false, nullptr, nullptr);
+            InjectReadsForArguments(readyArgVec, hImmediateCommandList, false, nullptr, nullptr);
           }
-          DumpReadyArguments(readyArgVec, queueSubmissionState->cmdQueueNumber,
-                             queueSubmissionState->cmdListNumber, cfg, sd, kernelInfo.get());
+          DumpReadyArguments(readyArgVec, submission->cmdQueueNumber, submission->cmdListNumber,
+                             cfg, sd, kernelInfo.get());
         }
       }
-      if (tmpList) {
-        sd.Release<CKernelArgumentDump>(tmpList);
+      if (hImmediateCommandList) {
+        sd.Release<CKernelArgumentDump>(hImmediateCommandList);
       }
     } else {
-      if (queueSubmissionState->readyArgVector != nullptr &&
-          !queueSubmissionState->readyArgVector->empty()) {
-        for (const auto& kernelInfo : queueSubmissionState->kernelsExecutionInfo) {
-          DumpReadyArguments(*queueSubmissionState->readyArgVector,
-                             queueSubmissionState->cmdQueueNumber,
-                             queueSubmissionState->cmdListNumber, cfg, sd, kernelInfo.get());
+      if (submission->readyArgVector != nullptr && !submission->readyArgVector->empty()) {
+        for (const auto& kernelInfo : submission->kernelsExecutionInfo) {
+          DumpReadyArguments(*submission->readyArgVector, submission->cmdQueueNumber,
+                             submission->cmdListNumber, cfg, sd, kernelInfo.get());
         }
       }
     }
@@ -792,6 +798,9 @@ void CommandListKernelInit(CStateDynamic& sd,
       std::make_unique<CKernelExecutionInfo>(kernelState.currentKernelInfo);
   cmdListState.appendedKernels.push_back(std::move(kernelState.currentKernelInfo));
   kernelState.currentKernelInfo = std::move(pointer);
+  if (Config::IsRecorder()) {
+    sd.gst.Add(commandList, cmdListState.appendedKernels.back());
+  }
 }
 
 bool IsBruteForceScanForIndirectPointersEnabled(const Config& cfg) {
@@ -944,6 +953,21 @@ uint32_t GetDeviceIpVersion(CStateDynamic& sd, const CDriver& cDriver) {
     }
   }
   return deviceIp;
+}
+
+bool CheckKernelResidencyPossibilities(const CAllocState& allocState,
+                                       const unsigned int indirectTypes,
+                                       const ze_context_handle_t hContext) {
+  const auto kernelMightModifyAllocation =
+      (allocState.memType == UnifiedMemoryType::device &&
+       indirectTypes & ZE_KERNEL_INDIRECT_ACCESS_FLAG_DEVICE) ||
+      (allocState.memType == UnifiedMemoryType::host &&
+       indirectTypes & ZE_KERNEL_INDIRECT_ACCESS_FLAG_HOST) ||
+      (allocState.memType == UnifiedMemoryType::shared &&
+       indirectTypes & ZE_KERNEL_INDIRECT_ACCESS_FLAG_SHARED);
+  const auto isResident =
+      allocState.residencyInfo && allocState.residencyInfo->hContext == hContext;
+  return kernelMightModifyAllocation || isResident;
 }
 } // namespace l0
 } // namespace gits

@@ -228,6 +228,13 @@ struct convert<gits::MemoryUpdateStateOpt> {
 };
 
 template <>
+struct convert<gits::MemoryTrackingModeOpt> {
+  static bool decode(const Node& node, gits::MemoryTrackingModeOpt& rhs) {
+    return decodeNamedValuesBaseOption(node, rhs);
+  }
+};
+
+template <>
 struct convert<gits::BufferStateRestorationOpt> {
   static bool decode(const Node& node, gits::BufferStateRestorationOpt& rhs) {
     return decodeNamedValuesBaseOption(node, rhs);
@@ -350,13 +357,7 @@ struct convert<gits::Config::Common::Player> {
       rhs.logLoadedTokens = node["LogLoadedTokens"].as<gits::vi_bool>();
       rhs.escalatePriority = node["EscalatePriority"].as<gits::vi_bool>();
       rhs.swapAfterPrepare = node["SwapAfterPrepare"].as<gits::vi_bool>();
-      rhs.loadResourcesImmediately = node["LoadResourcesImmediately"].as<gits::vi_bool>();
       rhs.stopAfterFrames = node["StopAfterFrames"].as<BitRange>();
-      rhs.tokenLoadLimit = node["TokenLoadLimit"].as<gits::vi_uint>();
-      rhs.useZoneAllocator = node["UseZoneAllocator"].as<gits::vi_bool>();
-      rhs.precacheResources = node["PrecacheResources"].as<gits::vi_bool>();
-      rhs.syncWithRecorder = node["SyncWithRecorder"].as<gits::vi_bool>();
-      rhs.keepApis = node["KeepApis"].as<BitRange>();
       rhs.nullRun = node["NullRun"].as<gits::vi_bool>();
       rhs.waitForEnter = node["WaitForEnter"].as<gits::vi_bool>();
       rhs.cleanResourcesOnExit = node["CleanResourcesOnExit"].as<gits::vi_bool>();
@@ -489,10 +490,8 @@ struct convert<gits::Config::OpenGL::Player> {
       rhs.traceGitsInternal = node["TraceGitsInternal"].as<gits::vi_bool>();
       rhs.linkGetProgBinary = node["LinkGetProgBinary"].as<gits::vi_bool>();
       rhs.linkUseProgBinary = node["LinkUseProgBinary"].as<gits::vi_bool>();
-      rhs.forcePortableWglDepthBits = node["ForcePortableWglDepthBits"].as<gits::vi_uint>();
       rhs.affectedViewport = node["AffectedViewport"].as<std::vector<int>>();
       rhs.traceGLBufferHashes = node["TraceGLBufferHashes"].as<BitRange>();
-      rhs.showOriginalPixelFormat = node["ShowOriginalPixelFormat"].as<gits::vi_bool>();
       rhs.forceNoMSAA = node["ForceNoMSAA"].as<gits::vi_bool>();
       rhs.destroyContextsOnExit = node["DestroyContextsOnExit"].as<gits::vi_bool>();
 #ifdef GITS_PLATFORM_LINUX
@@ -659,8 +658,7 @@ struct convert<gits::Config::Vulkan::Recorder> {
       rhs.dumpSubmits = node["DumpSubmits"].as<BitRange>();
       rhs.traceVkStructs = node["TraceVKStructs"].as<gits::vi_bool>();
       rhs.memorySegmentSize = node["MemorySegmentSize"].as<gits::vi_uint>();
-      rhs.shadowMemory = node["ShadowMemory"].as<gits::vi_bool>();
-      rhs.memoryAccessDetection = node["MemoryAccessDetection"].as<gits::vi_bool>();
+      rhs.memoryTrackingMode = node["MemoryTrackingMode"].as<gits::MemoryTrackingModeOpt>();
       rhs.memoryUpdateState = node["MemoryUpdateState"].as<gits::MemoryUpdateStateOpt>();
       rhs.forceUniversalRecording = node["ForceUniversalRecording"].as<gits::vi_bool>();
       rhs.delayFenceChecksCount = node["DelayFenceChecksCount"].as<gits::vi_uint>();
@@ -696,7 +694,6 @@ struct convert<gits::Config::Vulkan::Recorder> {
       rhs.useCaptureReplayFeaturesForRayTracingPipelines =
           node["UseCaptureReplayFeaturesForRayTracingPipelines"].as<gits::vi_bool>();
 #ifdef GITS_PLATFORM_WINDOWS
-      rhs.useExternalMemoryExtension = node["UseExternalMemoryExtension"].as<gits::vi_bool>();
       rhs.renderDocCompatibility =
           node["UsePresentSrcLayoutTransitionAsAFrameBoundary"].as<gits::vi_bool>();
       rhs.renderDocCompatibility = node["RenderDocCompatibility"].as<gits::vi_bool>();
@@ -810,6 +807,7 @@ struct convert<gits::Config::LevelZero::Recorder> {
           node["DisableAddressTranslation"]["VirtualDeviceMemorySize"].as<gits::vi_uint64>();
       rhs.disableAddressTranslation.virtualHostMemorySize =
           node["DisableAddressTranslation"]["VirtualHostMemorySize"].as<gits::vi_uint64>();
+      rhs.dumpLayoutOnly = node["DumpLayoutOnly"].as<gits::vi_bool>();
       return true;
     } catch (const YAML::Exception& e) {
       Log(ERR) << "YAML parser exception: " << e.what();

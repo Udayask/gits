@@ -34,6 +34,7 @@ list(APPEND common_SOURCES
   include/malloc_allocator.h
   include/MemorySniffer.h
   include/message_pump.h
+  include/messageBus.h
   include/performance.h
   include/platform.h
   include/pragmas.h
@@ -47,7 +48,6 @@ list(APPEND common_SOURCES
   include/tools_lite.h
   include/tools.h
   include/version.h
-  include/zone_allocator.h
   include/automateCCode.h
   include/ccodeWriteWrap.h
   include/intervalSet.h
@@ -56,6 +56,7 @@ list(APPEND common_SOURCES
   include/recorderBehaviors.h
   include/recorder.h
   include/state.h
+  include/vectorMapper.h
 
   apis_iface.cpp
   argument.cpp
@@ -74,6 +75,7 @@ list(APPEND common_SOURCES
   log.cpp
   MemorySniffer.cpp
   message_pump.cpp
+  messageBus.cpp
   performance.cpp
   resource_manager.cpp
   runner.cpp
@@ -85,7 +87,6 @@ list(APPEND common_SOURCES
   tools.cpp
   version.cpp
   dynamic_linker.cpp
-  zone_allocator.cpp
   lua_bindings.cpp
   InputListener.cpp
   keyEvents.cpp
@@ -115,7 +116,9 @@ source_group("recorder" FILES
 if(WIN32)
   list(APPEND common_SOURCES
     include/tools_windows.h
+    include/eventHandlers.h
     tools_windows.cpp
+    eventHandlers.cpp
   )
 endif()
 
@@ -172,7 +175,8 @@ set(common_CCode_HEADERS
   include/keyEvents.h
   include/getopt_.h
   include/streams.h
-  include/intervalSet.h)
+  include/intervalSet.h
+  include/vectorMapper.h)
 if(WIN32)
   list(APPEND common_CCode_HEADERS include/tools_windows.h)
 endif()

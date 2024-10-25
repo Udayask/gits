@@ -28,7 +28,11 @@
 
 namespace gits {
 struct Config {
-  enum TMode { MODE_UNKNOWN, MODE_RECORDER, MODE_PLAYER };
+  enum TMode {
+    MODE_UNKNOWN,
+    MODE_RECORDER,
+    MODE_PLAYER
+  };
 
   static const std::string CONFIG_FILE_NAME;
   static std::filesystem::path GetConfigPath(const std::filesystem::path& appDir);
@@ -74,7 +78,6 @@ struct Config {
       std::filesystem::path applicationPath;
       std::string helpGroup;
       vi_bool stats;
-      vi_bool statsVerb;
       vi_bool version;
       vi_bool diags;
 
@@ -116,13 +119,7 @@ struct Config {
       vi_bool logLoadedTokens;
       vi_bool escalatePriority;
       vi_bool swapAfterPrepare;
-      vi_bool loadResourcesImmediately;
       BitRange stopAfterFrames;
-      vi_uint tokenLoadLimit;
-      vi_bool useZoneAllocator;
-      vi_bool precacheResources;
-      vi_bool syncWithRecorder;
-      BitRange keepApis;
       vi_bool nullRun;
       vi_bool waitForEnter;
       vi_bool cleanResourcesOnExit;
@@ -240,11 +237,9 @@ struct Config {
       vi_bool traceGitsInternal;
       vi_bool linkGetProgBinary;
       vi_bool linkUseProgBinary;
-      vi_uint forcePortableWglDepthBits;
       vi_bool affectViewport;
       std::vector<int> affectedViewport;
       BitRange traceGLBufferHashes;
-      vi_bool showOriginalPixelFormat;
       vi_bool forceNoMSAA;
       vi_bool destroyContextsOnExit;
 #ifdef GITS_PLATFORM_LINUX
@@ -304,11 +299,6 @@ struct Config {
       vi_bool mtDriverWA;
 #endif
       vi_bool ccodeRangesWA;
-
-      // Abandoned options
-      vi_int updateMappedTexturesEveryNSwaps;
-      vi_bool forceSyncFlushCommands;
-      vi_bool forceFBOSupportWA;
     } recorder;
   } opengl;
 
@@ -386,6 +376,8 @@ struct Config {
       vi_uint memorySegmentSize;
       vi_bool shadowMemory;
       vi_bool memoryAccessDetection;
+      vi_bool writeWatchDetection;
+      MemoryTrackingModeOpt memoryTrackingMode;
       MemoryUpdateStateOpt memoryUpdateState;
       vi_bool forceUniversalRecording;
       vi_uint delayFenceChecksCount;
@@ -507,6 +499,7 @@ struct Config {
         vi_uint64 virtualDeviceMemorySize;
         vi_uint64 virtualHostMemorySize;
       } disableAddressTranslation;
+      vi_bool dumpLayoutOnly;
     } recorder;
   } levelzero;
 

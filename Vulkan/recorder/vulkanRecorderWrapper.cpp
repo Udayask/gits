@@ -109,9 +109,13 @@ void* CRecorderWrapper::GetShadowMemory(VkDeviceMemory memory,
     }
 
     if (!memoryState->shadowMemory->Initialized()) {
-      memoryState->shadowMemory->Init(Config::Get().vulkan.recorder.memoryAccessDetection,
-                                      (size_t)unmapSize, orig);
+      memoryState->shadowMemory->Init(true, (size_t)unmapSize, orig,
+                                      gits::Config::Get().vulkan.recorder.writeWatchDetection);
       memoryState->shadowMemory->UpdateShadow(0, (size_t)unmapSize);
+      if (Config::Get().vulkan.recorder.writeWatchDetection) {
+        WriteWatchSniffer::ResetTouchedPages((char*)memoryState->shadowMemory->GetData(),
+                                             (size_t)unmapSize);
+      }
     } else {
       memoryState->shadowMemory->SetOriginalBuffer(orig);
     }
@@ -140,6 +144,10 @@ void CRecorderWrapper::dumpScreenshot(VkQueue queue,
 namespace {
 void ProcessOnQueueSubmitEndMessageReceivers(
     std::shared_ptr<CCommandBufferState>& commandBufferState, VkQueue queue, bool& waitVar) {
+  if (!commandBufferState) {
+    return;
+  }
+
   if (!commandBufferState->queueSubmitEndMessageReceivers.empty() && !waitVar) {
     drvVk.vkQueueWaitIdle(queue);
     waitVar = true;
@@ -244,6 +252,9 @@ void CRecorderWrapper::resetMemoryAfterQueueSubmit(VkQueue queue,
               } else {
                 memoryState->shadowMemory->UpdateShadow((size_t)offset, (size_t)size);
               }
+              if (Config::Get().vulkan.recorder.writeWatchDetection) {
+                WriteWatchSniffer::ResetTouchedPages((char*)pointer + offset, (size_t)size);
+              }
             }
           }
           if (Config::Get().vulkan.recorder.memorySegmentSize) {
@@ -260,9 +271,10 @@ void CRecorderWrapper::resetMemoryAfterQueueSubmit(VkQueue queue,
   // Perform tasks which were waiting for queue submit end (i.e. acceleration structure building data acquisition)
   for (uint32_t i = 0; i < submitCount; i++) {
     for (uint32_t j = 0; j < pSubmits[i].commandBufferCount; j++) {
-      auto& commandBufferState = SD()._commandbufferstates[pSubmits[i].pCommandBuffers[j]];
-
-      ProcessOnQueueSubmitEndMessageReceivers(commandBufferState, queue, queueWaitIdleAlreadyUsed);
+      auto it = SD()._commandbufferstates.find(pSubmits[i].pCommandBuffers[j]);
+      if (it != SD()._commandbufferstates.end()) {
+        ProcessOnQueueSubmitEndMessageReceivers(it->second, queue, queueWaitIdleAlreadyUsed);
+      }
     }
   }
 }
@@ -361,6 +373,9 @@ void CRecorderWrapper::resetMemoryAfterQueueSubmit2(VkQueue queue,
               } else {
                 memoryState->shadowMemory->UpdateShadow((size_t)offset, (size_t)size);
               }
+              if (Config::Get().vulkan.recorder.writeWatchDetection) {
+                WriteWatchSniffer::ResetTouchedPages((char*)pointer + offset, (size_t)size);
+              }
             }
           }
           if (Config::Get().vulkan.recorder.memorySegmentSize) {
@@ -458,6 +473,7 @@ void CRecorderWrapper::DisableConfigOptions() const {
     cfg.vulkan.recorder.memoryAccessDetection = false;
     cfg.vulkan.recorder.memorySegmentSize = 0;
     cfg.vulkan.recorder.shadowMemory = false;
+    cfg.vulkan.recorder.writeWatchDetection = false;
     cfg.vulkan.recorder.memoryUpdateState.setFromString("UsingTags");
 #ifdef GITS_PLATFORM_WINDOWS
     cfg.vulkan.recorder.useExternalMemoryExtension = false;
@@ -547,6 +563,10 @@ void CRecorderWrapper::SetConfig(Config const& cfg) const {
 
 bool CRecorderWrapper::IsUseExternalMemoryExtensionUsed() const {
   return isUseExternalMemoryExtensionUsed();
+}
+
+bool CRecorderWrapper::IsSubcaptureBeforeRestorationPhase() const {
+  return isSubcaptureBeforeRestorationPhase();
 }
 
 } // namespace Vulkan
